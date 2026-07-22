@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: artstudio242-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install && npx prisma generate
+    startCommand: npx prisma db push && node prisma/seed.js && npm start
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        sync: false
+      - key: ADMIN_EMAIL
+        value: admin@artstudio242.com
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_NAME
+        value: Art Studio Admin
+      - key: NODE_VERSION
+        value: "20"
