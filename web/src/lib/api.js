@@ -5,8 +5,10 @@ const MEMORY_TTL = 60_000;
 
 async function request(path, options = {}) {
   const method = options.method || "GET";
-  const useCache = method === "GET" && options.cache !== "no-store" && typeof window !== "undefined";
-  const cacheKey = path;
+  const noStore = options.cache === "no-store";
+  const useCache =
+    method === "GET" && !noStore && typeof window !== "undefined";
+  const cacheKey = path.split("?")[0];
 
   if (useCache && memoryCache.has(cacheKey)) {
     const hit = memoryCache.get(cacheKey);
@@ -24,17 +26,27 @@ async function request(path, options = {}) {
   }
 
   const fetchOpts = {
-    ...options,
+    method,
     headers,
+    body: options.body,
   };
 
   if (typeof window === "undefined") {
-    fetchOpts.next = options.next || { revalidate: 30 };
-  } else if (!options.cache) {
-    fetchOpts.cache = "default";
+    if (noStore) {
+      fetchOpts.cache = "no-store";
+    } else {
+      fetchOpts.next = options.next || { revalidate: 10 };
+    }
+  } else {
+    fetchOpts.cache = noStore ? "no-store" : "default";
   }
 
-  const res = await fetch(`${API_URL}${path}`, fetchOpts);
+  const url =
+    noStore && method === "GET"
+      ? `${API_URL}${path}${path.includes("?") ? "&" : "?"}_=${Date.now()}`
+      : `${API_URL}${path}`;
+
+  const res = await fetch(url, fetchOpts);
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     throw new Error(data.error || `Erreur ${res.status}`);
@@ -56,7 +68,10 @@ export const api = {
   patch: (path, body) =>
     request(path, { method: "PATCH", body: JSON.stringify(body), cache: "no-store" }),
   delete: (path) => request(path, { method: "DELETE", cache: "no-store" }),
-  clearCache: () => memoryCache.clear(),
+  clearCache: (path) => {
+    if (path) memoryCache.delete(path.split("?")[0]);
+    else memoryCache.clear();
+  },
   upload: async (file) => {
     const form = new FormData();
     form.append("file", file);

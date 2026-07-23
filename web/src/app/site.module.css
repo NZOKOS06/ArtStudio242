@@ -36,14 +36,14 @@
   font-size: 1.05rem;
 }
 
-.nav {
+.navDesktop {
   display: flex;
   gap: 22px;
   font-weight: 600;
   color: var(--ink-soft);
 }
 
-.nav a:hover {
+.navDesktop a:hover {
   color: var(--green-deep);
 }
 
@@ -57,6 +57,34 @@
   font-weight: 700;
   font-size: 0.9rem;
   color: var(--green-deep);
+}
+
+.burger {
+  display: none;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.burger span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: var(--ink);
+  border-radius: 2px;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+.mobileDrawer {
+  display: none;
 }
 
 .hero {
@@ -502,14 +530,52 @@
 
 @media (max-width: 980px) {
   .packsGrid,
-  .galleryGrid,
+  .galleryGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
   .contactGrid,
   .extrasGrid {
     grid-template-columns: 1fr;
   }
 
-  .nav {
+  .navDesktop,
+  .waLink {
     display: none;
+  }
+
+  .burger {
+    display: inline-flex;
+  }
+
+  .mobileDrawer {
+    display: block;
+    position: fixed;
+    inset: 74px 0 0 0;
+    background: rgba(28, 24, 20, 0.35);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    z-index: 40;
+  }
+
+  .mobileOpen {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .mobileNav {
+    background: var(--paper);
+    border-bottom: 1px solid var(--line);
+    padding: 20px;
+    display: grid;
+    gap: 14px;
+  }
+
+  .mobileNav a {
+    font-weight: 700;
+    font-size: 1.05rem;
+    padding: 10px 4px;
   }
 
   .contactGrid {
@@ -519,5 +585,67 @@
   .ccard {
     border-right: 0;
     border-bottom: 1px solid var(--line);
+  }
+
+  .hero {
+    min-height: auto;
+    padding: 48px 0 64px;
+  }
+
+  .heroActions {
+    width: 100%;
+  }
+
+  .heroActions .btn {
+    width: 100%;
+  }
+
+  .navCta {
+    padding: 8px 14px;
+    font-size: 0.85rem;
+  }
+
+  .brandName {
+    font-size: 0.92rem;
+  }
+
+  .pack .btn {
+    width: auto;
+    align-self: flex-start;
+  }
+
+  .footLinks {
+    flex-wrap: wrap;
+    gap: 12px 18px;
+  }
+}
+
+@media (max-width: 640px) {
+  .packsGrid,
+  .galleryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .offerRibbon {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .formCard {
+    padding: 20px 16px;
+  }
+
+  .price {
+    font-size: 1.7rem;
+  }
+
+  .watermark {
+    font-size: 9rem;
+    opacity: 0.7;
+  }
+
+  .pack {
+    padding: 20px 16px;
+    min-height: 280px;
   }
 }

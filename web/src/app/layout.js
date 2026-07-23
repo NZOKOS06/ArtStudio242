@@ -41,7 +41,6 @@ export const metadata = {
     ],
     apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
   },
-  themeColor: "#146b37",
 };
 
 export const viewport = {
@@ -54,7 +53,7 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="fr">
+    <html lang="fr" data-scroll-behavior="smooth">
       <body className={`${manrope.variable} ${anton.variable} ${caveat.variable}`}>
         <Providers>{children}</Providers>
       </body>

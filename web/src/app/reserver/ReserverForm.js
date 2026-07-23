@@ -4,14 +4,14 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { api } from "../../lib/api";
+import { useStudio } from "../../lib/StudioContext";
 import SiteHeader from "../../components/SiteHeader";
 import SiteFooter from "../../components/SiteFooter";
 import styles from "../site.module.css";
 
 export default function ReserverForm() {
   const searchParams = useSearchParams();
-  const [settings, setSettings] = useState({});
-  const [packs, setPacks] = useState([]);
+  const { settings, packs } = useStudio();
   const [form, setForm] = useState({
     clientName: "",
     clientPhone: "",
@@ -24,20 +24,12 @@ export default function ReserverForm() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    Promise.all([api.get("/api/settings"), api.get("/api/packs")])
-      .then(([s, p]) => {
-        setSettings(s);
-        setPacks(p);
-        const slug = searchParams.get("pack");
-        if (slug) {
-          const match = p.find((x) => x.slug === slug);
-          if (match) setForm((f) => ({ ...f, packId: match.id }));
-        }
-      })
-      .catch(() =>
-        setStatus({ type: "error", message: "Impossible de charger les packs." })
-      );
-  }, [searchParams]);
+    const slug = searchParams.get("pack");
+    if (slug && packs.length) {
+      const match = packs.find((x) => x.slug === slug);
+      if (match) setForm((f) => ({ ...f, packId: match.id }));
+    }
+  }, [searchParams, packs]);
 
   async function onSubmit(e) {
     e.preventDefault();

@@ -89,7 +89,15 @@ Admin → `http://localhost:3000/admin/login`
 1. Import du repo, **Root Directory** = `web`
 2. Variable : `NEXT_PUBLIC_API_URL` = URL Render (ex. `https://artstudio242-api.onrender.com`)
 
-## Identité visuelle
+## PWA
+
+Le site est installable ( Progressive Web App ) :
+- `web/public/manifest.webmanifest`
+- `web/public/sw.js` (actif en production)
+- Icônes dans `web/public/icons/`
+
+Sur mobile (Chrome/Safari) : « Ajouter à l’écran d’accueil ».
+
 
 Reprise de la maquette HTML :
 - Papier `#f5efe1`, encre `#1c1814`

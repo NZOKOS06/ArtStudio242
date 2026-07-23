@@ -2,21 +2,37 @@
 
 import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
+import { useStudio } from "../../lib/StudioContext";
 import SiteHeader from "../../components/SiteHeader";
 import SiteFooter from "../../components/SiteFooter";
 import styles from "../site.module.css";
 
 export default function AvisPage() {
-  const [settings, setSettings] = useState({});
+  const { settings } = useStudio();
   const [reviews, setReviews] = useState([]);
   const [form, setForm] = useState({ authorName: "", rating: 5, comment: "" });
   const [status, setStatus] = useState({ type: "", message: "" });
 
   useEffect(() => {
-    Promise.all([api.get("/api/settings"), api.get("/api/reviews")])
-      .then(([s, r]) => {
-        setSettings(s);
+    try {
+      const raw = sessionStorage.getItem("as242_reviews_v1");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Date.now() - parsed.ts < 5 * 60 * 1000) setReviews(parsed.data);
+      }
+    } catch {
+      /* ignore */
+    }
+
+    api
+      .get("/api/reviews")
+      .then((r) => {
         setReviews(r);
+        try {
+          sessionStorage.setItem("as242_reviews_v1", JSON.stringify({ ts: Date.now(), data: r }));
+        } catch {
+          /* ignore */
+        }
       })
       .catch(() => {});
   }, []);
@@ -47,7 +63,7 @@ export default function AvisPage() {
         </div>
 
         <div className="grid-2">
-          <div className="grid-1" style={{ display: "grid", gap: 16 }}>
+          <div style={{ display: "grid", gap: 16 }}>
             {reviews.map((r) => (
               <article key={r.id} className={styles.reviewCard}>
                 <div className={styles.stars}>{"★".repeat(r.rating)}</div>

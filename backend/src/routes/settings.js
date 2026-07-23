@@ -1,6 +1,7 @@
 const express = require("express");
 const { prisma } = require("../lib/prisma");
 const { requireAuth } = require("../middleware/auth");
+const { notify } = require("../lib/realtime");
 
 const router = express.Router();
 
@@ -37,7 +38,9 @@ router.put("/", requireAuth, async (req, res) => {
     );
 
     const rows = await prisma.setting.findMany();
-    res.json(settingsToObject(rows));
+    const data = settingsToObject(rows);
+    notify("settings", "update");
+    res.json(data);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erreur serveur" });

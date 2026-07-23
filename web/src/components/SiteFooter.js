@@ -1,7 +1,12 @@
+"use client";
+
 import Link from "next/link";
+import { useStudio } from "../lib/StudioContext";
 import styles from "../app/site.module.css";
 
-export default function SiteFooter({ settings }) {
+export default function SiteFooter({ settings: settingsProp }) {
+  const { settings: ctxSettings } = useStudio();
+  const settings = { ...(settingsProp || {}), ...ctxSettings };
   const brand = settings?.brandName || "Art Studio 242";
   const tagline = settings?.tagline || "Capturer • Sublimer • Immortaliser";
 

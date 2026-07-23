@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 import { useAdminGuard } from "../../lib/useAdminGuard";
+import { useLiveReload } from "../../lib/StudioContext";
 import AdminShell from "../../components/AdminShell";
 import styles from "./admin.module.css";
 
@@ -10,15 +11,25 @@ export default function AdminDashboardPage() {
   const ready = useAdminGuard();
   const [stats, setStats] = useState(null);
 
+  function load() {
+    return api.get("/api/dashboard/stats", { cache: "no-store" }).then(setStats);
+  }
+
   useEffect(() => {
     if (!ready) return;
-    api.get("/api/dashboard/stats").then(setStats).catch(console.error);
+    load().catch(console.error);
   }, [ready]);
 
-  if (!ready) return <div className="container section">Chargement...</div>;
+  useLiveReload(["bookings", "reviews", "gallery", "packs"], () => {
+    if (ready) load().catch(console.error);
+  });
+
+  if (!ready) {
+    return <AdminShell title="Dashboard" subtitle="Vue d’ensemble de l’activité" loading />;
+  }
 
   return (
-    <AdminShell title="Dashboard">
+    <AdminShell title="Dashboard" subtitle="Vue d’ensemble de l’activité">
       <div className={styles.cards}>
         <div className={styles.stat}>
           <span>Réservations</span>

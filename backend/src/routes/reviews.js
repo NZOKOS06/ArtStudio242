@@ -2,6 +2,7 @@ const express = require("express");
 const { z } = require("zod");
 const { prisma } = require("../lib/prisma");
 const { requireAuth } = require("../middleware/auth");
+const { notify } = require("../lib/realtime");
 
 const router = express.Router();
 
@@ -31,6 +32,7 @@ router.post("/", async (req, res) => {
     const review = await prisma.review.create({
       data: { ...data, isApproved: false },
     });
+    notify("reviews", "create");
     res.status(201).json({
       ...review,
       message: "Merci ! Votre avis sera publié après validation.",
@@ -57,6 +59,7 @@ router.patch("/:id", requireAuth, async (req, res) => {
       where: { id: req.params.id },
       data,
     });
+    notify("reviews", "update");
     res.json(review);
   } catch (err) {
     if (err instanceof z.ZodError) {
@@ -70,6 +73,7 @@ router.patch("/:id", requireAuth, async (req, res) => {
 router.delete("/:id", requireAuth, async (req, res) => {
   try {
     await prisma.review.delete({ where: { id: req.params.id } });
+    notify("reviews", "delete");
     res.json({ ok: true });
   } catch (err) {
     console.error(err);

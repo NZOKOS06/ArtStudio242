@@ -2,6 +2,7 @@ const express = require("express");
 const { z } = require("zod");
 const { prisma } = require("../lib/prisma");
 const { requireAuth } = require("../middleware/auth");
+const { notify } = require("../lib/realtime");
 
 const router = express.Router();
 
@@ -44,6 +45,7 @@ router.post("/", requireAuth, async (req, res) => {
   try {
     const data = imageSchema.parse(req.body);
     const image = await prisma.galleryImage.create({ data });
+    notify("gallery", "create");
     res.status(201).json(image);
   } catch (err) {
     if (err instanceof z.ZodError) {
@@ -61,6 +63,7 @@ router.put("/:id", requireAuth, async (req, res) => {
       where: { id: req.params.id },
       data,
     });
+    notify("gallery", "update");
     res.json(image);
   } catch (err) {
     if (err instanceof z.ZodError) {
@@ -74,6 +77,7 @@ router.put("/:id", requireAuth, async (req, res) => {
 router.delete("/:id", requireAuth, async (req, res) => {
   try {
     await prisma.galleryImage.delete({ where: { id: req.params.id } });
+    notify("gallery", "delete");
     res.json({ ok: true });
   } catch (err) {
     console.error(err);

@@ -45,6 +45,7 @@ app.use("/api/bookings", bookingsRoutes);
 app.use("/api/reviews", reviewsRoutes);
 app.use("/api/uploads", uploadsRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/events", require("./routes/events"));
 
 app.use((err, _req, res, _next) => {
   console.error(err);

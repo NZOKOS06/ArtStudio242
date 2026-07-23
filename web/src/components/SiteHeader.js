@@ -2,17 +2,26 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { api } from "../lib/api";
 import { useStudio } from "../lib/StudioContext";
 import styles from "../app/site.module.css";
 
 export default function SiteHeader({ settings: settingsProp }) {
+  const pathname = usePathname();
   const { settings: ctxSettings } = useStudio();
-  const settings = { ...ctxSettings, ...settingsProp };
+  const settings = {
+    ...(settingsProp || {}),
+    ...ctxSettings,
+  };
   const brand = settings?.brandName || "Art Studio 242";
   const whatsapp = settings?.whatsapp || "242069167515";
   const logoUrl = settings?.logoUrl ? api.assetUrl(settings.logoUrl) : null;
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     const els = document.querySelectorAll(".reveal:not(.in)");
@@ -30,7 +39,7 @@ export default function SiteHeader({ settings: settingsProp }) {
     );
     els.forEach((el) => io.observe(el));
     return () => io.disconnect();
-  });
+  }, [pathname]);
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
