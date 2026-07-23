@@ -2,6 +2,7 @@ services:
   - type: web
     name: artstudio242-api
     runtime: node
+    plan: free
     rootDir: backend
     buildCommand: npm install && npx prisma generate
     startCommand: npx prisma db push && node prisma/seed.js && npm start

@@ -4,8 +4,8 @@ const nextConfig = {
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
-      { protocol: "http", hostname: "localhost" },
-      { protocol: "https", hostname: "*.onrender.com" },
+      { protocol: "http", hostname: "localhost", pathname: "/**" },
+      { protocol: "https", hostname: "*.onrender.com", pathname: "/**" },
     ],
   },
   experimental: {

@@ -106,7 +106,7 @@ async function main() {
   for (const pack of packs) {
     await prisma.pack.upsert({
       where: { slug: pack.slug },
-      update: pack,
+      update: {},
       create: pack,
     });
   }
@@ -149,7 +149,7 @@ async function main() {
   for (const cat of categories) {
     await prisma.category.upsert({
       where: { slug: cat.slug },
-      update: cat,
+      update: {},
       create: cat,
     });
   }
