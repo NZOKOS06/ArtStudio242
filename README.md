@@ -90,11 +90,12 @@ Ordre recommandé : **Neon → Render (API) → Vercel (web) → recoller CORS**
    - `JWT_SECRET` — long et aléatoire (généré par Render si Blueprint)
    - `CORS_ORIGIN` — URL Vercel (ex. `https://artstudio242.vercel.app`)
    - `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `ADMIN_NAME`
+   - `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` — [Cloudinary](https://cloudinary.com) (Dashboard → API Keys)
 6. Noter l’URL publique : `https://….onrender.com`
 
 Le seed est **idempotent** : il ne réécrit pas packs / catégories / settings déjà présents.
 
-**Uploads** : sur le plan free Render, les fichiers dans `/uploads` sont éphémères (perdus au redéploy). Les images Unsplash du seed restent OK.
+**Uploads** : les images admin partent vers **Cloudinary** (dossier `artstudio242/`). Sans credentials Cloudinary en local, fallback disque `uploads/`.
 
 ### 3. Vercel (Web)
 1. Import du repo, **Root Directory** = `web`
@@ -113,7 +114,6 @@ Sur Render, mettre `CORS_ORIGIN` = URL Vercel exacte (plusieurs origines possibl
 ### Limites plan free
 - Cold start Render (~30–60 s) au premier hit
 - SSE indisponible pendant le sleep
-- Uploads non persistants sans disque payant / stockage cloud
 
 ## PWA
 
