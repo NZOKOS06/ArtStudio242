@@ -1,25 +1,17 @@
-import { Manrope, Anton, Caveat } from "next/font/google";
+import { Inter, Outfit } from "next/font/google";
 import Providers from "../components/Providers";
+import SmoothScroll from "../components/SmoothScroll";
 import "./globals.css";
 
-const manrope = Manrope({
+const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-manrope",
+  variable: "--font-inter",
   display: "swap",
 });
 
-const anton = Anton({
+const outfit = Outfit({
   subsets: ["latin"],
-  weight: "400",
-  variable: "--font-anton",
-  display: "swap",
-});
-
-const caveat = Caveat({
-  subsets: ["latin"],
-  weight: ["600", "700"],
-  variable: "--font-caveat",
+  variable: "--font-outfit",
   display: "swap",
 });
 
@@ -44,7 +36,7 @@ export const metadata = {
 };
 
 export const viewport = {
-  themeColor: "#146b37",
+  themeColor: "#000000",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -53,9 +45,11 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="fr" data-scroll-behavior="smooth">
-      <body className={`${manrope.variable} ${anton.variable} ${caveat.variable}`}>
-        <Providers>{children}</Providers>
+    <html lang="fr" data-scroll-behavior="smooth" className="antialiased dark">
+      <body className={`${inter.variable} ${outfit.variable} font-sans`}>
+        <Providers>
+          <SmoothScroll>{children}</SmoothScroll>
+        </Providers>
       </body>
     </html>
   );
