@@ -2,7 +2,7 @@
   position: sticky;
   top: 0;
   z-index: 50;
-  background: rgba(245, 239, 225, 0.92);
+  background: rgba(10, 10, 10, 0.92);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--line);
 }
@@ -95,8 +95,8 @@
   padding: 72px 0 88px;
   overflow: hidden;
   background:
-    radial-gradient(circle at 85% 20%, rgba(226, 168, 58, 0.22), transparent 40%),
-    radial-gradient(circle at 10% 80%, rgba(20, 107, 55, 0.16), transparent 35%),
+    radial-gradient(circle at 85% 20%, rgba(192, 57, 43, 0.15), transparent 40%),
+    radial-gradient(circle at 10% 80%, rgba(192, 57, 43, 0.10), transparent 35%),
     linear-gradient(180deg, var(--paper) 0%, var(--paper-deep) 100%);
 }
 
@@ -107,7 +107,7 @@
   font-family: "Anton", sans-serif;
   font-size: clamp(10rem, 28vw, 22rem);
   line-height: 0.8;
-  color: rgba(28, 24, 20, 0.05);
+  color: rgba(255, 255, 255, 0.02);
   pointer-events: none;
   user-select: none;
 }
@@ -202,7 +202,7 @@
 }
 
 .pack {
-  background: #fff;
+  background: var(--paper-deep);
   border: 1px solid var(--line);
   border-radius: 22px;
   padding: 24px 20px;
@@ -286,7 +286,7 @@
   border-radius: 22px;
   overflow: hidden;
   border: 1px solid var(--line);
-  background: #fff;
+  background: var(--paper-deep);
 }
 
 .extrasHead {
@@ -297,8 +297,8 @@
   color: #fff;
 }
 
-.bonus .extrasHead { background: var(--green); }
-.options .extrasHead { background: var(--ink); }
+.bonus .extrasHead { background: var(--primary); }
+.options .extrasHead { background: var(--paper); border-bottom: 1px solid var(--line); }
 
 .extrasBody {
   padding: 18px 22px 22px;
@@ -388,7 +388,7 @@
   border-top: 0;
   border-radius: 0 0 16px 16px;
   overflow: hidden;
-  background: #fff;
+  background: var(--paper-deep);
 }
 
 .ccard {
@@ -446,7 +446,7 @@
 }
 
 .formCard {
-  background: #fff;
+  background: var(--paper-deep);
   border: 1px solid var(--line);
   border-radius: 22px;
   padding: 28px;
@@ -512,7 +512,7 @@
 }
 
 .reviewCard {
-  background: #fff;
+  background: var(--paper-deep);
   border: 1px solid var(--line);
   border-radius: 18px;
   padding: 22px;

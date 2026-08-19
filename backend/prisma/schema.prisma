@@ -75,6 +75,8 @@ model Booking {
   clientName  String
   clientPhone String
   clientEmail String?
+  clientInstagram String?
+  projectName String?
   packId      String?
   pack        Pack?         @relation(fields: [packId], references: [id], onDelete: SetNull)
   packName    String?
