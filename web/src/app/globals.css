@@ -18,10 +18,10 @@ body {
     @apply w-full text-sm text-left;
   }
   .admin-table thead th {
-    @apply text-xs font-bold text-white/30 tracking-widest uppercase px-4 py-3 border-b border-white/8;
+    @apply text-xs font-bold text-white/30 tracking-widest uppercase px-4 py-3 border-b border-white/10;
   }
   .admin-table tbody tr {
-    @apply border-b border-white/5 hover:bg-white/3 transition-colors;
+    @apply border-b border-white/5 hover:bg-white/5 transition-colors;
   }
   .admin-table tbody td {
     @apply px-4 py-3 text-white/70 align-top;
@@ -29,7 +29,7 @@ body {
 
   /* Admin panel card */
   .admin-panel {
-    @apply bg-white/3 border border-white/8 rounded-2xl overflow-hidden;
+    @apply bg-white/5 border border-white/10 rounded-2xl overflow-hidden;
   }
 
   /* Status badge */
