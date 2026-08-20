@@ -8,9 +8,16 @@ import { useStudio } from "../../lib/StudioContext";
 import SiteHeader from "../../components/SiteHeader";
 import SiteFooter from "../../components/SiteFooter";
 
+const DEFAULT_PACKS = [
+  { id: "1", name: "Standard", slug: "standard", price: 50000, features: ["Séance 1h", "10 photos retouchées"] },
+  { id: "2", name: "Premium", slug: "premium", price: 100000, features: ["Séance 2h", "30 photos retouchées"] },
+  { id: "3", name: "Prestige", slug: "prestige", price: 200000, features: ["Demi-journée", "Toutes les photos"] },
+];
+
 export default function ReserverForm() {
   const searchParams = useSearchParams();
   const { settings, packs, categories } = useStudio();
+  const displayPacks = packs.length > 0 ? packs : DEFAULT_PACKS;
   const [form, setForm] = useState({
     projectName: "",
     packId: "",
@@ -26,11 +33,11 @@ export default function ReserverForm() {
 
   useEffect(() => {
     const slug = searchParams.get("pack");
-    if (slug && packs.length) {
-      const match = packs.find((x) => x.slug === slug);
+    if (slug && displayPacks.length) {
+      const match = displayPacks.find((x) => x.slug === slug);
       if (match) setForm((f) => ({ ...f, packId: match.id }));
     }
-  }, [searchParams, packs]);
+  }, [searchParams, displayPacks]);
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -54,7 +61,7 @@ export default function ReserverForm() {
     }
   }
 
-  const selectedPack = packs.find((p) => p.id === form.packId);
+  const selectedPack = displayPacks.find((p) => p.id === form.packId);
   const whatsapp = settings.whatsapp || "242069167515";
   const defaultCategories = [
     { id: 1, name: "Portrait" }, { id: 2, name: "Mode" },
@@ -133,7 +140,7 @@ export default function ReserverForm() {
                   02 — Votre expérience
                 </h3>
                 <div className="flex flex-col gap-3">
-                  {packs.map((p) => (
+                  {displayPacks.map((p) => (
                     <label
                       key={p.id}
                       className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all duration-200 ${
