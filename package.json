@@ -5,6 +5,7 @@
     "dev:web": "npm --prefix web run dev",
     "dev:api": "npm --prefix backend run dev",
     "build:web": "npm --prefix web run build",
+    "build": "npm install --prefix web && npm run build --prefix web",
     "db:setup": "npm --prefix backend run db:setup",
     "start:api": "npm --prefix backend start"
   }
