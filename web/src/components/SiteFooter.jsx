@@ -19,7 +19,7 @@ export default function SiteFooter({ settings: settingsProp }) {
               ART STUDIO <span className="text-primary">242</span>
             </div>
             <p className="text-white/50 text-sm leading-relaxed">
-              Studio photo & création visuelle — Brazzaville, République du Congo.
+              Studio photo & création visuelle - Brazzaville, République du Congo.
             </p>
           </div>
 
@@ -66,7 +66,7 @@ export default function SiteFooter({ settings: settingsProp }) {
         {/* Bottom bar */}
         <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs text-white/30">
-            © {new Date().getFullYear()} {brand} — {tagline}
+            © {new Date().getFullYear()} {brand} - {tagline}
           </p>
           <Link href="/admin/login" className="text-xs text-white/20 hover:text-white/40 transition-colors">
             Admin

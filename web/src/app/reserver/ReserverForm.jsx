@@ -99,7 +99,7 @@ export default function ReserverForm() {
                 {/* Projet */}
                 <div className="bg-white/3 border border-white/10 rounded-2xl p-6">
                   <h3 className="text-xs font-black text-white/40 tracking-[0.2em] uppercase mb-5">
-                    01 — Votre projet
+                    01. Votre projet
                   </h3>
                   <div className="grid grid-cols-2 gap-2">
                     {displayCategories.map((c) => (
@@ -122,7 +122,7 @@ export default function ReserverForm() {
                 {/* Date */}
                 <div className="bg-white/3 border border-white/10 rounded-2xl p-6">
                   <h3 className="text-xs font-black text-white/40 tracking-[0.2em] uppercase mb-5">
-                    03 — Votre date
+                    03. Votre date
                   </h3>
                   <input
                     type="datetime-local"
@@ -137,7 +137,7 @@ export default function ReserverForm() {
               {/* ── Colonne 2 : Expérience ── */}
               <div className="bg-white/3 border border-white/10 rounded-2xl p-6">
                 <h3 className="text-xs font-black text-white/40 tracking-[0.2em] uppercase mb-5">
-                  02 — Votre expérience
+                  02. Votre expérience
                 </h3>
                 <div className="flex flex-col gap-3">
                   {displayPacks.map((p) => (
@@ -172,7 +172,7 @@ export default function ReserverForm() {
               {/* ── Colonne 3 : Vos infos ── */}
               <div className="bg-white/3 border border-white/10 rounded-2xl p-6">
                 <h3 className="text-xs font-black text-white/40 tracking-[0.2em] uppercase mb-5">
-                  04 — Vos informations
+                  04. Vos informations
                 </h3>
                 <div className="flex flex-col gap-3">
                   {[
@@ -212,7 +212,7 @@ export default function ReserverForm() {
                 </p>
                 <p className="text-white text-sm mt-1">
                   <span className="text-white/50">Formule :</span>{" "}
-                  <strong>{selectedPack ? `${selectedPack.name} — ${selectedPack.price.toLocaleString("fr-FR")} FCFA` : "Non sélectionnée"}</strong>
+                  <strong>{selectedPack ? `${selectedPack.name} : ${selectedPack.price.toLocaleString("fr-FR")} FCFA` : "Non sélectionnée"}</strong>
                 </p>
               </div>
 

@@ -93,7 +93,7 @@ export default function HomeClient({ initial }) {
           {/* Text */}
           <div className="relative z-10">
             <p className="hero-eyebrow text-primary text-xs font-bold tracking-[0.25em] uppercase mb-6 opacity-0">
-              Studio photo & création visuelle — Brazzaville
+              Studio photo & création visuelle - Brazzaville
             </p>
             <h1 ref={heroTitleRef} className="font-display font-black leading-[1.05] text-white mb-8">
               <span className="hero-title-line block text-5xl md:text-7xl opacity-0">L'image n'est pas</span>
@@ -116,7 +116,7 @@ export default function HomeClient({ initial }) {
             </div>
             {offline && (
               <p className="mt-6 text-sm text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-4 py-3">
-                ⚠ API hors ligne — démarrez le backend pour charger les données.
+                ⚠ API hors ligne : démarrez le backend pour charger les données.
               </p>
             )}
           </div>
@@ -126,7 +126,7 @@ export default function HomeClient({ initial }) {
             <div className="hero-img relative w-full max-w-lg opacity-0">
               <img
                 src="/hero.jpg"
-                alt="Art Studio 242 — Photographe professionnel à Brazzaville"
+                alt="Art Studio 242 - Photographe professionnel à Brazzaville"
                 className="w-full h-auto rounded-2xl object-cover shadow-2xl"
               />
               {/* Subtle red border glow */}

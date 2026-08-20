@@ -132,7 +132,7 @@ export default function AdminSettingsPage() {
             {/* Brand */}
             <section id="settings-brand" className="admin-panel p-6">
               <div className="mb-6">
-                <p className="text-primary text-xs font-bold tracking-[0.2em] uppercase mb-1">01 — Marque</p>
+                <p className="text-primary text-xs font-bold tracking-[0.2em] uppercase mb-1">01. Marque</p>
                 <h2 className="font-display font-black text-xl text-white">Identité visuelle</h2>
                 <p className="text-sm text-white/40 mt-1">Logo, nom et signature du studio visibles sur tout le site.</p>
               </div>
@@ -158,7 +158,7 @@ export default function AdminSettingsPage() {
             {/* Hero */}
             <section id="settings-hero" className="admin-panel p-6">
               <div className="mb-6">
-                <p className="text-primary text-xs font-bold tracking-[0.2em] uppercase mb-1">02 — Accueil</p>
+                <p className="text-primary text-xs font-bold tracking-[0.2em] uppercase mb-1">02. Accueil</p>
                 <h2 className="font-display font-black text-xl text-white">Section Hero</h2>
                 <p className="text-sm text-white/40 mt-1">Le premier écran que voient vos visiteurs.</p>
               </div>
@@ -175,7 +175,7 @@ export default function AdminSettingsPage() {
             {/* Promo */}
             <section id="settings-promo" className="admin-panel p-6">
               <div className="mb-6">
-                <p className="text-primary text-xs font-bold tracking-[0.2em] uppercase mb-1">03 — Offre</p>
+                <p className="text-primary text-xs font-bold tracking-[0.2em] uppercase mb-1">03. Offre</p>
                 <h2 className="font-display font-black text-xl text-white">Promotion</h2>
                 <p className="text-sm text-white/40 mt-1">Ces champs alimentent le ruban d'offre sur la page d'accueil.</p>
               </div>
@@ -206,7 +206,7 @@ export default function AdminSettingsPage() {
             {/* Contact */}
             <section id="settings-contact" className="admin-panel p-6">
               <div className="mb-6">
-                <p className="text-primary text-xs font-bold tracking-[0.2em] uppercase mb-1">04 — Coordonnées</p>
+                <p className="text-primary text-xs font-bold tracking-[0.2em] uppercase mb-1">04. Coordonnées</p>
                 <h2 className="font-display font-black text-xl text-white">Contact & localisation</h2>
                 <p className="text-sm text-white/40 mt-1">Informations affichées dans le bloc contact et utilisées pour WhatsApp.</p>
               </div>
@@ -222,7 +222,7 @@ export default function AdminSettingsPage() {
             {/* Social */}
             <section id="settings-social" className="admin-panel p-6">
               <div className="mb-6">
-                <p className="text-primary text-xs font-bold tracking-[0.2em] uppercase mb-1">05 — Social</p>
+                <p className="text-primary text-xs font-bold tracking-[0.2em] uppercase mb-1">05. Social</p>
                 <h2 className="font-display font-black text-xl text-white">Réseaux sociaux</h2>
                 <p className="text-sm text-white/40 mt-1">Liens vers vos profils — Instagram, Facebook, TikTok.</p>
               </div>
@@ -236,7 +236,7 @@ export default function AdminSettingsPage() {
             {/* SEO */}
             <section id="settings-seo" className="admin-panel p-6">
               <div className="mb-6">
-                <p className="text-primary text-xs font-bold tracking-[0.2em] uppercase mb-1">06 — Référencement</p>
+                <p className="text-primary text-xs font-bold tracking-[0.2em] uppercase mb-1">06. Référencement</p>
                 <h2 className="font-display font-black text-xl text-white">SEO</h2>
                 <p className="text-sm text-white/40 mt-1">Titre et description utilisés par Google et les partages sociaux.</p>
               </div>

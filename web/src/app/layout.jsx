@@ -16,7 +16,7 @@ const outfit = Outfit({
 });
 
 export const metadata = {
-  title: "Art Studio 242 — Capturez vos meilleurs moments",
+  title: "Art Studio 242 - Capturez vos meilleurs moments",
   description:
     "Studio photo professionnel à Brazzaville. Portraits, événements, packs photo. Réservez votre séance en ligne.",
   applicationName: "Art Studio 242",
