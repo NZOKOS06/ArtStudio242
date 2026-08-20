@@ -143,6 +143,7 @@ export default function HomeClient({ initial }) {
       </section>
 
       {/* ═══════════════════════════════════════ FEATURES ═══════════════════════════════════════ */}
+      {/* 
       <section className="py-20 bg-black border-t border-white/5">
         <div className="max-w-7xl mx-auto px-6">
           <div className="gsap-reveal text-center mb-14">
@@ -165,6 +166,7 @@ export default function HomeClient({ initial }) {
           </div>
         </div>
       </section>
+      */}
 
       {/* ═══════════════════════════════════════ SPÉCIALITÉS ═══════════════════════════════════════ */}
       {categories.length > 0 && (
