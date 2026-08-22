@@ -83,12 +83,16 @@ export const api = {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Upload échoué");
-    return { ...data, fullUrl: `${API_URL}${data.url}` };
+    const url = data.url || "";
+    const fullUrl = /^https?:\/\//i.test(url) ? url : `${API_URL}${url}`;
+    return { ...data, url, fullUrl };
   },
   assetUrl: (url) => {
     if (!url) return "";
-    if (url.startsWith("http")) return url;
-    return `${API_URL}${url}`;
+    if (/^https?:\/\//i.test(url) || url.startsWith("//") || url.startsWith("data:") || url.startsWith("blob:")) {
+      return url;
+    }
+    return `${API_URL}${url.startsWith("/") ? url : `/${url}`}`;
   },
 };
 

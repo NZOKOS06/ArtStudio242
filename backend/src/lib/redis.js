@@ -4,23 +4,31 @@ class RedisClient {
   constructor() {
     this.client = null;
     this.isConnected = false;
+    if (!process.env.REDIS_URL && !process.env.REDIS_HOST) {
+      return;
+    }
     this.connect();
   }
 
   connect() {
     try {
-      this.client = new Redis({
-        host: process.env.REDIS_HOST || 'localhost',
-        port: process.env.REDIS_PORT || 6379,
-        password: process.env.REDIS_PASSWORD || undefined,
-        db: process.env.REDIS_DB || 0,
-        retryDelayOnFailover: 100,
-        maxRetriesPerRequest: 3,
-        lazyConnect: true,
-        // Configuration pour la production
-        connectTimeout: 5000,
-        commandTimeout: 5000,
-      });
+      this.client = process.env.REDIS_URL
+        ? new Redis(process.env.REDIS_URL, {
+            maxRetriesPerRequest: 3,
+            lazyConnect: true,
+            connectTimeout: 5000,
+            commandTimeout: 5000,
+          })
+        : new Redis({
+            host: process.env.REDIS_HOST,
+            port: process.env.REDIS_PORT || 6379,
+            password: process.env.REDIS_PASSWORD || undefined,
+            db: process.env.REDIS_DB || 0,
+            maxRetriesPerRequest: 3,
+            lazyConnect: true,
+            connectTimeout: 5000,
+            commandTimeout: 5000,
+          });
 
       this.client.on('connect', () => {
         console.log('✅ Redis connected');
@@ -32,8 +40,13 @@ class RedisClient {
         this.isConnected = false;
       });
 
-      this.client.on('close', () => {
-        console.log('🔌 Redis connection closed');
+      this.client.on("close", () => {
+        console.log("🔌 Redis connection closed");
+        this.isConnected = false;
+      });
+
+      this.client.connect().catch((err) => {
+        console.error("❌ Redis connect failed:", err.message);
         this.isConnected = false;
       });
 

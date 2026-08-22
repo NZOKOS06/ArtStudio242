@@ -8,6 +8,7 @@ const {
   imageCacheMiddleware, 
   createCacheInvalidator 
 } = require("../middleware/cache");
+const { rewriteGalleryImage } = require("../lib/cloudinary");
 
 const router = express.Router();
 
@@ -45,13 +46,13 @@ router.get("/", imageCacheMiddleware, async (req, res) => {
         orderBy: { sortOrder: "asc" },
         include: { 
           category: {
-            select: { id: true, name: true, slug: true } // Sélection optimisée
+            select: { id: true, name: true, slug: true }
           } 
         },
       });
-    }, 3600); // Cache 1 heure
+    }, 3600);
 
-    res.json(images);
+    res.json(Array.isArray(images) ? images.map(rewriteGalleryImage) : images);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erreur serveur" });

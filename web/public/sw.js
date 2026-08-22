@@ -1,7 +1,7 @@
-const CACHE_NAME = 'artstudio242-v2';
-const STATIC_CACHE = 'artstudio242-static-v2';
-const API_CACHE = 'artstudio242-api-v2';
-const IMAGE_CACHE = 'artstudio242-images-v2';
+const CACHE_NAME = 'artstudio242-v3';
+const STATIC_CACHE = 'artstudio242-static-v3';
+const API_CACHE = 'artstudio242-api-v3';
+const IMAGE_CACHE = 'artstudio242-images-v3';
 
 // Ressources statiques à mettre en cache
 const STATIC_RESOURCES = [
