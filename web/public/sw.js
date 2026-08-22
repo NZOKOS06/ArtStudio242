@@ -1,7 +1,7 @@
-const CACHE_NAME = 'artstudio242-v3';
-const STATIC_CACHE = 'artstudio242-static-v3';
-const API_CACHE = 'artstudio242-api-v3';
-const IMAGE_CACHE = 'artstudio242-images-v3';
+const CACHE_NAME = 'artstudio242-v4';
+const STATIC_CACHE = 'artstudio242-static-v4';
+const API_CACHE = 'artstudio242-api-v4';
+const IMAGE_CACHE = 'artstudio242-images-v4';
 
 // Ressources statiques à mettre en cache
 const STATIC_RESOURCES = [
@@ -41,13 +41,22 @@ const CACHE_STRATEGIES = {
 // Installation du SW
 self.addEventListener('install', (event) => {
   console.log('🔄 Service Worker installing...');
-  
+
   event.waitUntil(
     Promise.all([
-      caches.open(STATIC_CACHE).then(cache => {
-        return cache.addAll(STATIC_RESOURCES);
-      }),
-      self.skipWaiting()
+      caches.open(STATIC_CACHE).then((cache) =>
+        // On ajoute chaque ressource individuellement : si l'une échoue
+        // (404, offline pendant le build, etc.), les autres restent en cache
+        // et l'installation du SW n'échoue jamais entièrement.
+        Promise.all(
+          STATIC_RESOURCES.map((url) =>
+            cache.add(url).catch((err) => {
+              console.warn('SW install: échec cache pour', url, err.message);
+            })
+          )
+        )
+      ),
+      self.skipWaiting(),
     ])
   );
 });
@@ -123,14 +132,24 @@ async function networkFirst(request, config) {
 async function staleWhileRevalidate(request, config) {
   const cache = await caches.open(config.cacheName);
   const cached = await cache.match(request);
-  
-  const fetchPromise = fetch(request).then(response => {
-    if (response.status === 200) {
-      cache.put(request, response.clone());
-    }
-    return response;
-  });
-  
+
+  const fetchPromise = fetch(request)
+    .then((response) => {
+      if (response && response.status === 200) {
+        cache.put(request, response.clone());
+      }
+      return response;
+    })
+    .catch((error) => {
+      // Pas de réponse réseau : on retombe sur le cache si dispo,
+      // sinon on laisse l'appelant gérer l'erreur (jamais de valeur `undefined`
+      // silencieuse qui casserait la navigation).
+      if (cached) return cached;
+      throw error;
+    });
+
+  // Important : `cached` est déjà une valeur résolue (pas une Promise),
+  // donc ce `||` est sûr ici (contrairement à comparer deux Promises).
   return cached || fetchPromise;
 }
 
@@ -158,24 +177,42 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     (async () => {
       try {
+        let response;
         switch (config.strategy) {
           case 'CacheFirst':
-            return await cacheFirst(request, config);
+            response = await cacheFirst(request, config);
+            break;
           case 'NetworkFirst':
-            return await networkFirst(request, config);
+            response = await networkFirst(request, config);
+            break;
           case 'StaleWhileRevalidate':
-            return await staleWhileRevalidate(request, config);
+            response = await staleWhileRevalidate(request, config);
+            break;
           default:
-            return fetch(request);
+            response = await fetch(request);
         }
+        // Ne jamais renvoyer une valeur non-Response à respondWith :
+        // Chrome affiche "This page couldn't load" si la valeur est undefined.
+        if (response instanceof Response) return response;
+        throw new Error('Réponse invalide du cache/réseau');
       } catch (error) {
         console.error('SW Fetch error:', error);
-        
-        // Fallback vers page offline pour la navigation
+
+        // Fallback vers la page offline pour une navigation complète
         if (request.mode === 'navigate') {
-          return caches.match('/offline') || caches.match('/') || new Response('Offline');
+          const offline = await caches.match('/offline');
+          if (offline) return offline;
+          const home = await caches.match('/');
+          if (home) return home;
+          return new Response(
+            '<h1>Hors connexion</h1><p>Vérifiez votre connexion internet et réessayez.</p>',
+            { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+          );
         }
-        
+
+        // Pour tout le reste (images, données, assets), on laisse le
+        // navigateur gérer l'échec normalement (image cassée, etc.)
+        // plutôt que de risquer une réponse invalide.
         throw error;
       }
     })()
