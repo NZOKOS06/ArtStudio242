@@ -4,7 +4,6 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { api } from "../../lib/api";
 import { useStudio } from "../../lib/StudioContext";
-import { useCachedData } from "../../lib/useCache";
 import SiteHeader from "../../components/SiteHeader";
 import SiteFooter from "../../components/SiteFooter";
 import SimpleOptimizedImage from "../../components/SimpleOptimizedImage";
@@ -12,22 +11,23 @@ import SimpleOptimizedImage from "../../components/SimpleOptimizedImage";
 function GalleryContent() {
   const searchParams = useSearchParams();
   const { settings, categories } = useStudio();
+  const [images, setImages] = useState([]);
   const [active, setActive] = useState(searchParams.get("cat") || "all");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  // Utiliser le cache optimisé avec stale-while-revalidate
-  const { 
-    data: images = [], 
-    loading, 
-    error,
-    refetch 
-  } = useCachedData(
-    'gallery_images',
-    () => api.get("/api/gallery"),
-    { 
-      ttl: 10 * 60 * 1000, // 10 minutes
-      staleWhileRevalidate: true 
-    }
-  );
+  function load() {
+    setLoading(true);
+    setError(false);
+    api.get("/api/gallery")
+      .then((data) => setImages(Array.isArray(data) ? data : []))
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
 
   const filtered = active === "all" ? images : images.filter((img) => img.category?.slug === active);
 
@@ -87,7 +87,7 @@ function GalleryContent() {
             <div className="text-center py-16">
               <p className="text-white/60 mb-4">Erreur de chargement des images</p>
               <button
-                onClick={refetch}
+                onClick={load}
                 className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors"
               >
                 Réessayer
