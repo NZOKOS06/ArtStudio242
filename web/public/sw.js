@@ -1,7 +1,7 @@
-const CACHE_NAME = 'artstudio242-v4';
-const STATIC_CACHE = 'artstudio242-static-v4';
-const API_CACHE = 'artstudio242-api-v4';
-const IMAGE_CACHE = 'artstudio242-images-v4';
+const CACHE_NAME = 'artstudio242-v5';
+const STATIC_CACHE = 'artstudio242-static-v5';
+const API_CACHE = 'artstudio242-api-v5';
+const IMAGE_CACHE = 'artstudio242-images-v5';
 
 // Ressources statiques à mettre en cache
 const STATIC_RESOURCES = [
@@ -153,19 +153,63 @@ async function staleWhileRevalidate(request, config) {
   return cached || fetchPromise;
 }
 
+// Réponse HTML minimale garantie valide, utilisée en tout dernier recours.
+function offlineFallbackResponse() {
+  return new Response(
+    '<h1>Hors connexion</h1><p>Vérifiez votre connexion internet et réessayez.</p>',
+    { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+  );
+}
+
+// Pour une navigation complète (changement de page/URL dans la barre
+// d'adresse, rechargement, premier chargement), on ne fait JAMAIS dépendre
+// l'affichage du site de la logique de cache : le réseau est toujours tenté
+// en premier, exactement comme sans Service Worker. Le cache n'intervient
+// que si l'utilisateur est réellement hors connexion. Ainsi, un bug dans les
+// stratégies de cache ci-dessous ne peut plus jamais empêcher le site de
+// s'afficher.
+async function handleNavigate(request) {
+  try {
+    const response = await fetch(request);
+    if (response instanceof Response) return response;
+  } catch {
+    /* réseau indisponible, on tente le cache ci-dessous */
+  }
+
+  try {
+    const cached = await caches.match(request);
+    if (cached) return cached;
+    const offline = await caches.match('/offline');
+    if (offline) return offline;
+    const home = await caches.match('/');
+    if (home) return home;
+  } catch {
+    /* accès au cache impossible, on retombe sur la réponse minimale */
+  }
+
+  return offlineFallbackResponse();
+}
+
 // Gestionnaire principal des requêtes
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  const url = new URL(request.url);
-  
+
   // Ignorer les requêtes non-HTTP et non-GET
   if (!request.url.startsWith('http') || request.method !== 'GET') {
     return;
   }
 
-  // Déterminer la stratégie de cache
+  if (request.mode === 'navigate') {
+    event.respondWith(handleNavigate(request));
+    return;
+  }
+
+  const url = new URL(request.url);
+
+  // Déterminer la stratégie de cache pour les sous-ressources
+  // (images, appels API, assets statiques) — jamais pour la navigation.
   let config;
-  
+
   if (request.destination === 'image' || url.pathname.includes('/uploads/')) {
     config = CACHE_STRATEGIES.images;
   } else if (url.pathname.startsWith('/api/')) {
@@ -197,23 +241,12 @@ self.addEventListener('fetch', (event) => {
         throw new Error('Réponse invalide du cache/réseau');
       } catch (error) {
         console.error('SW Fetch error:', error);
-
-        // Fallback vers la page offline pour une navigation complète
-        if (request.mode === 'navigate') {
-          const offline = await caches.match('/offline');
-          if (offline) return offline;
-          const home = await caches.match('/');
-          if (home) return home;
-          return new Response(
-            '<h1>Hors connexion</h1><p>Vérifiez votre connexion internet et réessayez.</p>',
-            { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
-          );
-        }
-
-        // Pour tout le reste (images, données, assets), on laisse le
-        // navigateur gérer l'échec normalement (image cassée, etc.)
-        // plutôt que de risquer une réponse invalide.
-        throw error;
+        // Sous-ressource en échec (image, appel API, asset) : on laisse le
+        // navigateur gérer normalement (image cassée, requête en erreur)
+        // plutôt que de risquer une réponse invalide qui casserait la page.
+        return fetch(request).catch(() => {
+          throw error;
+        });
       }
     })()
   );

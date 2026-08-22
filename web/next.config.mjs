@@ -12,6 +12,20 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: [],
   },
+  async headers() {
+    return [
+      {
+        // Le Service Worker ne doit JAMAIS être mis en cache par le navigateur
+        // ou un CDN : sinon un correctif déployé peut mettre des heures/jours
+        // à atteindre les visiteurs, même les nouveaux.
+        source: "/sw.js",
+        headers: [
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Service-Worker-Allowed", value: "/" },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
