@@ -7,7 +7,7 @@ import { useStudio } from "../../lib/StudioContext";
 import { useCachedData } from "../../lib/useCache";
 import SiteHeader from "../../components/SiteHeader";
 import SiteFooter from "../../components/SiteFooter";
-import OptimizedImage from "../../components/OptimizedImage";
+import SimpleOptimizedImage from "../../components/SimpleOptimizedImage";
 
 function GalleryContent() {
   const searchParams = useSearchParams();
@@ -100,14 +100,12 @@ function GalleryContent() {
             <div className="columns-2 md:columns-3 gap-4 space-y-4">
               {filtered.map((img, index) => (
                 <div key={img.id} className="break-inside-avoid rounded-xl overflow-hidden group relative">
-                  <OptimizedImage
+                  <SimpleOptimizedImage
                     src={api.assetUrl(img.imageUrl)}
                     alt={img.alt || img.title || "Galerie Art Studio 242"}
                     className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-105"
                     loading={index < 6 ? "eager" : "lazy"} // Premières images en eager
                     priority={index < 3} // 3 premières en priorité
-                    sizes="(max-width: 768px) 50vw, 33vw"
-                    quality={90}
                   />
                   {img.title && (
                     <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent translate-y-full group-hover:translate-y-0 transition-transform duration-300">

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 
-// Intersection Observer global
+// Intersection Observer global pour lazy loading
 let imageObserver;
 const imageLoadQueue = new Map();
 
@@ -41,26 +41,47 @@ export default function OptimizedImage({
   const imgRef = useRef(null);
   const [shouldLoad, setShouldLoad] = useState(priority);
 
-  // Générer différentes tailles d'image (si supporté par le backend)
+  // Déterminer si l'image est hébergée sur Cloudinary
+  const isCloudinaryImage = (url) => {
+    return url && (url.includes('cloudinary.com') || url.includes('res.cloudinary.com'));
+  };
+
+  // Optimiser URL Cloudinary de manière sûre
+  const optimizeCloudinaryUrl = (url) => {
+    if (!isCloudinaryImage(url)) return url;
+    
+    try {
+      // Ajouter seulement f_auto,q_auto pour optimisation automatique
+      // Cloudinary choisira le meilleur format (WebP, AVIF, etc.) automatiquement
+      if (url.includes('/upload/') && !url.includes('f_auto')) {
+        return url.replace('/upload/', '/upload/f_auto,q_auto/');
+      }
+      return url;
+    } catch (error) {
+      console.warn('Erreur optimisation Cloudinary:', error);
+      return url;
+    }
+  };
+
+  // Générer srcset pour images responsives
   const generateSrcSet = (baseSrc) => {
     if (!baseSrc) return '';
     
-    const sizes = [400, 800, 1200, 1600];
-    return sizes.map(size => {
-      const url = new URL(baseSrc, window.location.origin);
-      url.searchParams.set('w', size);
-      url.searchParams.set('q', quality);
-      return `${url.toString()} ${size}w`;
-    }).join(', ');
-  };
-
-  // Générer URL WebP si supporté
-  const generateWebpSrc = (baseSrc) => {
-    if (!baseSrc) return baseSrc;
-    const url = new URL(baseSrc, window.location.origin);
-    url.searchParams.set('f', 'webp');
-    url.searchParams.set('q', quality);
-    return url.toString();
+    if (isCloudinaryImage(baseSrc)) {
+      // Pour Cloudinary, générer différentes tailles
+      const sizes = [400, 800, 1200, 1600];
+      return sizes.map(size => {
+        try {
+          const optimizedUrl = baseSrc.replace('/upload/', `/upload/f_auto,q_auto,w_${size}/`);
+          return `${optimizedUrl} ${size}w`;
+        } catch (error) {
+          return `${baseSrc} ${size}w`;
+        }
+      }).join(', ');
+    }
+    
+    // Pour les images locales, pas de srcset pour éviter les erreurs
+    return '';
   };
 
   // Intersection Observer pour lazy loading
@@ -93,25 +114,41 @@ export default function OptimizedImage({
     // Précharger l'image
     const img = new Image();
     
+    const optimizedSrc = optimizeCloudinaryUrl(src);
+    
     img.onload = () => {
-      setCurrentSrc(src);
+      setCurrentSrc(optimizedSrc);
       setIsLoaded(true);
       setIsError(false);
       onLoad?.();
     };
     
     img.onerror = () => {
-      setIsError(true);
-      setIsLoaded(false);
-      onError?.();
+      // En cas d'erreur avec l'URL optimisée, essayer l'URL originale
+      if (optimizedSrc !== src) {
+        console.warn('Erreur avec URL optimisée, fallback vers originale');
+        const fallbackImg = new Image();
+        fallbackImg.onload = () => {
+          setCurrentSrc(src);
+          setIsLoaded(true);
+          setIsError(false);
+          onLoad?.();
+        };
+        fallbackImg.onerror = () => {
+          setIsError(true);
+          setIsLoaded(false);
+          onError?.();
+        };
+        fallbackImg.src = src;
+      } else {
+        setIsError(true);
+        setIsLoaded(false);
+        onError?.();
+      }
     };
 
-    // Charger WebP si supporté, sinon format original
-    const canvas = document.createElement('canvas');
-    const webpSupported = canvas.toDataURL('image/webp').indexOf('webp') > -1;
-    
-    img.src = webpSupported ? generateWebpSrc(src) : src;
-  }, [shouldLoad, src, onLoad, onError, quality]);
+    img.src = optimizedSrc;
+  }, [shouldLoad, src, onLoad, onError]);
 
   // Placeholder pendant le chargement
   const PlaceholderDiv = () => (
@@ -147,33 +184,26 @@ export default function OptimizedImage({
     return <PlaceholderDiv />;
   }
 
-  // Image chargée avec support WebP et srcset
+  // Image chargée de manière robuste
   return (
-    <picture>
-      <source
-        srcSet={generateSrcSet(generateWebpSrc(src))}
-        sizes={sizes}
-        type="image/webp"
-      />
-      <img
-        ref={imgRef}
-        src={currentSrc}
-        srcSet={generateSrcSet(src)}
-        sizes={sizes}
-        alt={alt}
-        className={`transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'} ${className}`}
-        loading={loading}
-        decoding="async"
-        onLoad={() => {
-          setIsLoaded(true);
-          onLoad?.();
-        }}
-        onError={() => {
-          setIsError(true);
-          onError?.();
-        }}
-        {...props}
-      />
-    </picture>
+    <img
+      ref={imgRef}
+      src={currentSrc}
+      srcSet={generateSrcSet(src)}
+      sizes={isCloudinaryImage(src) ? sizes : undefined}
+      alt={alt}
+      className={`transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'} ${className}`}
+      loading={loading}
+      decoding="async"
+      onLoad={() => {
+        setIsLoaded(true);
+        onLoad?.();
+      }}
+      onError={() => {
+        setIsError(true);
+        onError?.();
+      }}
+      {...props}
+    />
   );
 }
