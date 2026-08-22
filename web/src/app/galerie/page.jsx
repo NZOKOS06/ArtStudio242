@@ -4,29 +4,30 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { api } from "../../lib/api";
 import { useStudio } from "../../lib/StudioContext";
+import { useCachedData } from "../../lib/useCache";
 import SiteHeader from "../../components/SiteHeader";
 import SiteFooter from "../../components/SiteFooter";
+import OptimizedImage from "../../components/OptimizedImage";
 
 function GalleryContent() {
   const searchParams = useSearchParams();
   const { settings, categories } = useStudio();
-  const [images, setImages] = useState([]);
   const [active, setActive] = useState(searchParams.get("cat") || "all");
-  const [ready, setReady] = useState(false);
 
-  useEffect(() => {
-    const cacheKey = "as242_gallery_v1";
-    try {
-      const raw = sessionStorage.getItem(cacheKey);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Date.now() - parsed.ts < 5 * 60 * 1000) { setImages(parsed.data); setReady(true); }
-      }
-    } catch { /* ignore */ }
-    api.get("/api/gallery")
-      .then((g) => { setImages(g); setReady(true); try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data: g })); } catch { /* ignore */ } })
-      .catch(() => setReady(true));
-  }, []);
+  // Utiliser le cache optimisé avec stale-while-revalidate
+  const { 
+    data: images = [], 
+    loading, 
+    error,
+    refetch 
+  } = useCachedData(
+    'gallery_images',
+    () => api.get("/api/gallery"),
+    { 
+      ttl: 10 * 60 * 1000, // 10 minutes
+      staleWhileRevalidate: true 
+    }
+  );
 
   const filtered = active === "all" ? images : images.filter((img) => img.category?.slug === active);
 
@@ -68,24 +69,45 @@ function GalleryContent() {
             ))}
           </div>
 
-          {!ready && (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {/* Loading skeleton */}
+          {loading && images.length === 0 && (
+            <div className="columns-2 md:columns-3 gap-4 space-y-4">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="aspect-[3/4] rounded-xl bg-white/3 animate-pulse" />
+                <div 
+                  key={i} 
+                  className="break-inside-avoid rounded-xl bg-white/3 animate-pulse"
+                  style={{ height: `${200 + Math.random() * 200}px` }}
+                />
               ))}
             </div>
           )}
 
-          {/* Image masonry */}
-          {ready && (
+          {/* Error state avec retry */}
+          {error && images.length === 0 && (
+            <div className="text-center py-16">
+              <p className="text-white/60 mb-4">Erreur de chargement des images</p>
+              <button
+                onClick={refetch}
+                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors"
+              >
+                Réessayer
+              </button>
+            </div>
+          )}
+
+          {/* Image masonry optimisée */}
+          {images.length > 0 && (
             <div className="columns-2 md:columns-3 gap-4 space-y-4">
-              {filtered.map((img) => (
+              {filtered.map((img, index) => (
                 <div key={img.id} className="break-inside-avoid rounded-xl overflow-hidden group relative">
-                  <img
+                  <OptimizedImage
                     src={api.assetUrl(img.imageUrl)}
                     alt={img.alt || img.title || "Galerie Art Studio 242"}
-                    loading="lazy"
                     className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-105"
+                    loading={index < 6 ? "eager" : "lazy"} // Premières images en eager
+                    priority={index < 3} // 3 premières en priorité
+                    sizes="(max-width: 768px) 50vw, 33vw"
+                    quality={90}
                   />
                   {img.title && (
                     <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent translate-y-full group-hover:translate-y-0 transition-transform duration-300">
@@ -94,8 +116,10 @@ function GalleryContent() {
                   )}
                 </div>
               ))}
-              {filtered.length === 0 && ready && (
-                <div className="col-span-full text-center text-white/30 py-16">Aucune image dans cette catégorie.</div>
+              {filtered.length === 0 && !loading && (
+                <div className="col-span-full text-center text-white/30 py-16">
+                  Aucune image dans cette catégorie.
+                </div>
               )}
             </div>
           )}

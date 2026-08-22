@@ -1,0 +1,179 @@
+"use client";
+
+import { useState, useRef, useEffect } from 'react';
+
+// Intersection Observer global
+let imageObserver;
+const imageLoadQueue = new Map();
+
+if (typeof window !== 'undefined') {
+  imageObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const callback = imageLoadQueue.get(entry.target);
+        if (callback) {
+          callback();
+          imageObserver.unobserve(entry.target);
+          imageLoadQueue.delete(entry.target);
+        }
+      }
+    });
+  }, {
+    rootMargin: '50px' // Charger 50px avant que l'image soit visible
+  });
+}
+
+export default function OptimizedImage({ 
+  src, 
+  alt, 
+  className = '', 
+  loading = 'lazy',
+  quality = 85,
+  sizes = "100vw",
+  priority = false,
+  onLoad,
+  onError,
+  ...props 
+}) {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isError, setIsError] = useState(false);
+  const [currentSrc, setCurrentSrc] = useState('');
+  const imgRef = useRef(null);
+  const [shouldLoad, setShouldLoad] = useState(priority);
+
+  // Générer différentes tailles d'image (si supporté par le backend)
+  const generateSrcSet = (baseSrc) => {
+    if (!baseSrc) return '';
+    
+    const sizes = [400, 800, 1200, 1600];
+    return sizes.map(size => {
+      const url = new URL(baseSrc, window.location.origin);
+      url.searchParams.set('w', size);
+      url.searchParams.set('q', quality);
+      return `${url.toString()} ${size}w`;
+    }).join(', ');
+  };
+
+  // Générer URL WebP si supporté
+  const generateWebpSrc = (baseSrc) => {
+    if (!baseSrc) return baseSrc;
+    const url = new URL(baseSrc, window.location.origin);
+    url.searchParams.set('f', 'webp');
+    url.searchParams.set('q', quality);
+    return url.toString();
+  };
+
+  // Intersection Observer pour lazy loading
+  useEffect(() => {
+    if (!imgRef.current || priority || shouldLoad) return;
+
+    const currentRef = imgRef.current;
+    
+    const loadCallback = () => {
+      setShouldLoad(true);
+    };
+
+    if (imageObserver) {
+      imageLoadQueue.set(currentRef, loadCallback);
+      imageObserver.observe(currentRef);
+    }
+
+    return () => {
+      if (imageObserver && currentRef) {
+        imageObserver.unobserve(currentRef);
+        imageLoadQueue.delete(currentRef);
+      }
+    };
+  }, [priority, shouldLoad]);
+
+  // Charger l'image quand shouldLoad change
+  useEffect(() => {
+    if (!shouldLoad || !src) return;
+
+    // Précharger l'image
+    const img = new Image();
+    
+    img.onload = () => {
+      setCurrentSrc(src);
+      setIsLoaded(true);
+      setIsError(false);
+      onLoad?.();
+    };
+    
+    img.onerror = () => {
+      setIsError(true);
+      setIsLoaded(false);
+      onError?.();
+    };
+
+    // Charger WebP si supporté, sinon format original
+    const canvas = document.createElement('canvas');
+    const webpSupported = canvas.toDataURL('image/webp').indexOf('webp') > -1;
+    
+    img.src = webpSupported ? generateWebpSrc(src) : src;
+  }, [shouldLoad, src, onLoad, onError, quality]);
+
+  // Placeholder pendant le chargement
+  const PlaceholderDiv = () => (
+    <div 
+      ref={imgRef}
+      className={`bg-white/3 animate-pulse flex items-center justify-center ${className}`}
+      {...props}
+    >
+      <svg 
+        className="w-8 h-8 text-white/20" 
+        fill="currentColor" 
+        viewBox="0 0 20 20"
+      >
+        <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+      </svg>
+    </div>
+  );
+
+  // Image d'erreur
+  if (isError) {
+    return (
+      <div 
+        className={`bg-red-900/20 border border-red-500/20 flex items-center justify-center ${className}`}
+        {...props}
+      >
+        <span className="text-red-400 text-xs">Erreur de chargement</span>
+      </div>
+    );
+  }
+
+  // Afficher le placeholder si pas encore chargé
+  if (!shouldLoad || !isLoaded || !currentSrc) {
+    return <PlaceholderDiv />;
+  }
+
+  // Image chargée avec support WebP et srcset
+  return (
+    <picture>
+      <source
+        srcSet={generateSrcSet(generateWebpSrc(src))}
+        sizes={sizes}
+        type="image/webp"
+      />
+      <img
+        ref={imgRef}
+        src={currentSrc}
+        srcSet={generateSrcSet(src)}
+        sizes={sizes}
+        alt={alt}
+        className={`transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'} ${className}`}
+        loading={loading}
+        decoding="async"
+        onLoad={() => {
+          setIsLoaded(true);
+          onLoad?.();
+        }}
+        onError={() => {
+          setIsError(true);
+          onError?.();
+        }}
+        {...props}
+      />
+    </picture>
+  );
+}

@@ -4,6 +4,12 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
+const compression = require("compression");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+
+// Initialiser Redis au démarrage
+require("./lib/redis");
 
 const authRoutes = require("./routes/auth");
 const settingsRoutes = require("./routes/settings");
@@ -23,6 +29,23 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // limite de 1000 requêtes par fenêtre
+  message: "Trop de requêtes, réessayez plus tard.",
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Sécurité et compression
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: false // Désactivé pour le développement
+}));
+app.use(compression());
+app.use(limiter);
+
 app.use(
   cors({
     origin: process.env.CORS_ORIGIN?.split(",").map((s) => s.trim()) || true,
@@ -30,7 +53,18 @@ app.use(
   })
 );
 app.use(express.json({ limit: "2mb" }));
-app.use("/uploads", express.static(uploadDir));
+
+// Servir les fichiers statiques avec cache optimisé
+app.use("/uploads", express.static(uploadDir, {
+  maxAge: '1y', // Cache 1 an
+  etag: true,
+  lastModified: true,
+  setHeaders: (res, path) => {
+    if (path.includes('/uploads/')) {
+      res.set('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+  }
+}));
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "artstudio242-api" });

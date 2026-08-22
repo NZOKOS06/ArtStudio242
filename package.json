@@ -2,11 +2,16 @@
   "name": "artstudio242",
   "private": true,
   "scripts": {
+    "dev": "node scripts/start-dev.js",
     "dev:web": "npm --prefix web run dev",
     "dev:api": "npm --prefix backend run dev",
     "build:web": "npm --prefix web run build",
     "build": "npm install --prefix web && npm run build --prefix web",
     "db:setup": "npm --prefix backend run db:setup",
-    "start:api": "npm --prefix backend start"
+    "start:api": "npm --prefix backend start",
+    "redis:install": "powershell -ExecutionPolicy Bypass -File scripts/install-redis-windows.ps1",
+    "redis:start": "redis-server",
+    "redis:stop": "redis-cli shutdown",
+    "cache:clear": "redis-cli flushall"
   }
 }
