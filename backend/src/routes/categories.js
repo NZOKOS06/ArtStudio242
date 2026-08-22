@@ -3,7 +3,7 @@ const { z } = require("zod");
 const { prisma } = require("../lib/prisma");
 const { requireAuth } = require("../middleware/auth");
 const { notify } = require("../lib/realtime");
-const { rewriteCategory } = require("../lib/cloudinary");
+const { rewriteCategoriesAsync } = require("../lib/cloudinary");
 
 const router = express.Router();
 
@@ -33,7 +33,7 @@ router.get("/", async (req, res) => {
       orderBy: { sortOrder: "asc" },
       include: { _count: { select: { gallery: true } } },
     });
-    res.json(categories.map(rewriteCategory));
+    res.json(await rewriteCategoriesAsync(categories, prisma));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erreur serveur" });

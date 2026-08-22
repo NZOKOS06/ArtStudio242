@@ -125,6 +125,23 @@ function rememberResource(resource) {
   }
 }
 
+async function fetchAllResources(prefix) {
+  const resources = [];
+  let next_cursor;
+  do {
+    const page = await cloudinary.api.resources({
+      type: "upload",
+      resource_type: "image",
+      ...(prefix ? { prefix } : {}),
+      max_results: 500,
+      next_cursor,
+    });
+    resources.push(...(page.resources || []));
+    next_cursor = page.next_cursor;
+  } while (next_cursor);
+  return resources;
+}
+
 async function loadCloudinaryIndex(force = false) {
   if (!isConfigured()) return filenameIndex;
   if (indexLoaded && !force) return filenameIndex;
@@ -133,19 +150,18 @@ async function loadCloudinaryIndex(force = false) {
   indexPromise = (async () => {
     if (force) filenameIndex.clear();
     try {
-      let next_cursor;
-      do {
-        const page = await cloudinary.api.resources({
-          type: "upload",
-          prefix: `${FOLDER}/`,
-          max_results: 500,
-          next_cursor,
-        });
-        for (const resource of page.resources || []) {
+      const folderResources = await fetchAllResources(`${FOLDER}/`);
+      for (const resource of folderResources) {
+        rememberResource(resource);
+      }
+
+      // Images uploadées avant l'introduction du dossier artstudio242/
+      const rootResources = await fetchAllResources("");
+      for (const resource of rootResources) {
+        if (!resource.public_id?.startsWith(`${FOLDER}/`)) {
           rememberResource(resource);
         }
-        next_cursor = page.next_cursor;
-      } while (next_cursor);
+      }
 
       indexLoaded = true;
       console.log(`Cloudinary index: ${filenameIndex.size} clés`);
@@ -199,17 +215,26 @@ async function urlExists(url) {
   }
 }
 
-async function resolveUploadFile(filename) {
-  if (!filename) return null;
-  await loadCloudinaryIndex();
-  const indexed = lookupIndexedUrl(filename);
-  if (indexed) return indexed;
+async function searchCloudinaryByFilename(filename) {
+  const stripped = filename.replace(/^\d+-/, "");
+  const stem = path.parse(stripped).name;
+  const base = path.parse(filename).name;
+  const terms = [
+    filename,
+    stripped,
+    stem,
+    base,
+    `${stem}.jpg`,
+    `${stem}.jpeg`,
+    `${stem}.png`,
+    `${stem}.webp`,
+  ];
 
-  if (isConfigured()) {
+  for (const term of terms) {
+    if (!term) continue;
     try {
-      const stem = path.parse(filename.replace(/^\d+-/, "")).name;
       const result = await cloudinary.search
-        .expression(`filename="${stem}"`)
+        .expression(`filename:"${term}"`)
         .max_results(5)
         .execute();
       const hit = result.resources?.[0];
@@ -217,9 +242,41 @@ async function resolveUploadFile(filename) {
         rememberResource(hit);
         return hit.secure_url;
       }
-    } catch (err) {
-      console.error("Cloudinary search error:", err.message);
+    } catch {
+      /* essayer le terme suivant */
     }
+  }
+
+  const core = stem.replace(/^_+/, "");
+  if (core.length >= 4) {
+    try {
+      const result = await cloudinary.search
+        .expression(`filename:*${core}*`)
+        .max_results(10)
+        .execute();
+      for (const hit of result.resources || []) {
+        if (hit?.secure_url) {
+          rememberResource(hit);
+          return hit.secure_url;
+        }
+      }
+    } catch (err) {
+      console.error("Cloudinary wildcard search error:", err.message);
+    }
+  }
+
+  return null;
+}
+
+async function resolveUploadFile(filename) {
+  if (!filename) return null;
+  await loadCloudinaryIndex();
+  const indexed = lookupIndexedUrl(filename);
+  if (indexed) return indexed;
+
+  if (isConfigured()) {
+    const found = await searchCloudinaryByFilename(filename);
+    if (found) return found;
   }
 
   for (const url of guessedCloudinaryUrls(filename)) {
@@ -239,9 +296,37 @@ function rewriteAssetUrl(url) {
   return lookupIndexedUrl(filename) || url;
 }
 
+async function rewriteAssetUrlAsync(url) {
+  if (!url || typeof url !== "string") return url;
+  if (!isLocalUploadUrl(url)) return url;
+  const filename = filenameFromUploadUrl(url);
+  const sync = lookupIndexedUrl(filename);
+  if (sync) return sync;
+  const remote = await resolveUploadFile(filename);
+  return remote || url;
+}
+
 function rewriteGalleryImage(image) {
   if (!image) return image;
   return { ...image, imageUrl: rewriteAssetUrl(image.imageUrl) };
+}
+
+async function rewriteGalleryImagesAsync(images, prisma) {
+  if (!Array.isArray(images)) return images;
+  return Promise.all(
+    images.map(async (image) => {
+      if (!image?.imageUrl || !isLocalUploadUrl(image.imageUrl)) {
+        return rewriteGalleryImage(image);
+      }
+      const remote = await rewriteAssetUrlAsync(image.imageUrl);
+      if (remote !== image.imageUrl && prisma) {
+        prisma.galleryImage
+          .update({ where: { id: image.id }, data: { imageUrl: remote } })
+          .catch(() => {});
+      }
+      return { ...image, imageUrl: remote };
+    })
+  );
 }
 
 function rewriteCategory(category) {
@@ -249,10 +334,42 @@ function rewriteCategory(category) {
   return { ...category, coverUrl: rewriteAssetUrl(category.coverUrl) };
 }
 
+async function rewriteCategoriesAsync(categories, prisma) {
+  if (!Array.isArray(categories)) return categories;
+  return Promise.all(
+    categories.map(async (category) => {
+      if (!category?.coverUrl || !isLocalUploadUrl(category.coverUrl)) {
+        return rewriteCategory(category);
+      }
+      const remote = await rewriteAssetUrlAsync(category.coverUrl);
+      if (remote !== category.coverUrl && prisma) {
+        prisma.category
+          .update({ where: { id: category.id }, data: { coverUrl: remote } })
+          .catch(() => {});
+      }
+      return { ...category, coverUrl: remote };
+    })
+  );
+}
+
 function rewriteSettings(settings) {
   if (!settings || typeof settings !== "object") return settings;
   if (!settings.logoUrl) return settings;
   return { ...settings, logoUrl: rewriteAssetUrl(settings.logoUrl) };
+}
+
+async function rewriteSettingsAsync(settings, prisma) {
+  if (!settings || typeof settings !== "object") return settings;
+  if (!settings.logoUrl || !isLocalUploadUrl(settings.logoUrl)) {
+    return rewriteSettings(settings);
+  }
+  const remote = await rewriteAssetUrlAsync(settings.logoUrl);
+  if (remote !== settings.logoUrl && prisma) {
+    prisma.setting
+      .update({ where: { key: "logoUrl" }, data: { value: remote } })
+      .catch(() => {});
+  }
+  return { ...settings, logoUrl: remote };
 }
 
 function uploadBuffer(buffer, originalname) {
@@ -351,9 +468,13 @@ module.exports = {
   loadCloudinaryIndex,
   resolveUploadFile,
   rewriteAssetUrl,
+  rewriteAssetUrlAsync,
   rewriteGalleryImage,
+  rewriteGalleryImagesAsync,
   rewriteCategory,
+  rewriteCategoriesAsync,
   rewriteSettings,
+  rewriteSettingsAsync,
   uploadBuffer,
   migrateLocalAssetUrls,
   FOLDER,
