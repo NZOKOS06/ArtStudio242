@@ -6,16 +6,22 @@ const filenameIndex = new Map();
 let indexLoaded = false;
 let indexPromise = null;
 
+function cleanEnv(value) {
+  if (value == null) return "";
+  return String(value).trim().replace(/^["']|["']$/g, "");
+}
+
 function parseCloudinaryUrl(url) {
-  if (!url) return null;
+  const raw = cleanEnv(url);
+  if (!raw) return null;
   try {
-    const u = new URL(url);
+    const u = new URL(raw);
     if (u.protocol !== "cloudinary:") return null;
-    return {
-      cloud_name: u.hostname,
-      api_key: decodeURIComponent(u.username || ""),
-      api_secret: decodeURIComponent(u.password || ""),
-    };
+    const cloud_name = u.hostname;
+    const api_key = decodeURIComponent(u.username || "");
+    const api_secret = decodeURIComponent(u.password || "");
+    if (!cloud_name || !api_key || !api_secret) return null;
+    return { cloud_name, api_key, api_secret };
   } catch {
     return null;
   }
@@ -23,21 +29,13 @@ function parseCloudinaryUrl(url) {
 
 function configure() {
   const fromUrl = parseCloudinaryUrl(process.env.CLOUDINARY_URL);
-  const cloud_name =
-    process.env.CLOUDINARY_CLOUD_NAME || fromUrl?.cloud_name || "";
-  const api_key = process.env.CLOUDINARY_API_KEY || fromUrl?.api_key || "";
-  const api_secret =
-    process.env.CLOUDINARY_API_SECRET || fromUrl?.api_secret || "";
+  const cloud_name = cleanEnv(process.env.CLOUDINARY_CLOUD_NAME) || fromUrl?.cloud_name || "";
+  const api_key = cleanEnv(process.env.CLOUDINARY_API_KEY) || fromUrl?.api_key || "";
+  const api_secret = cleanEnv(process.env.CLOUDINARY_API_SECRET) || fromUrl?.api_secret || "";
 
   if (cloud_name && api_key && api_secret) {
     cloudinary.config({ cloud_name, api_key, api_secret, secure: true });
     return true;
-  }
-
-  if (process.env.CLOUDINARY_URL) {
-    cloudinary.config({ secure: true });
-    const cfg = cloudinary.config();
-    return Boolean(cfg.cloud_name && cfg.api_key && cfg.api_secret);
   }
 
   return false;
@@ -48,6 +46,17 @@ const configured = configure();
 function isConfigured() {
   const cfg = cloudinary.config();
   return Boolean(cfg.cloud_name && cfg.api_key && cfg.api_secret);
+}
+
+function envStatus() {
+  const url = cleanEnv(process.env.CLOUDINARY_URL);
+  return {
+    CLOUDINARY_URL: Boolean(url),
+    CLOUDINARY_CLOUD_NAME: Boolean(cleanEnv(process.env.CLOUDINARY_CLOUD_NAME)),
+    CLOUDINARY_API_KEY: Boolean(cleanEnv(process.env.CLOUDINARY_API_KEY)),
+    CLOUDINARY_API_SECRET: Boolean(cleanEnv(process.env.CLOUDINARY_API_SECRET)),
+    parsedFromUrl: Boolean(parseCloudinaryUrl(url)),
+  };
 }
 
 function getCloudName() {
@@ -335,6 +344,7 @@ module.exports = {
   cloudinary,
   configured,
   isConfigured,
+  envStatus,
   isProductionHost,
   isLocalUploadUrl,
   filenameFromUploadUrl,

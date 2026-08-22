@@ -24,7 +24,7 @@ const dashboardRoutes = require("./routes/dashboard");
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-const { resolveUploadFile, loadCloudinaryIndex, migrateLocalAssetUrls, isConfigured } = require("./lib/cloudinary");
+const { resolveUploadFile, loadCloudinaryIndex, migrateLocalAssetUrls, isConfigured, envStatus } = require("./lib/cloudinary");
 const { prisma } = require("./lib/prisma");
 const { notify } = require("./lib/realtime");
 const { redis } = require("./lib/redis");
@@ -92,6 +92,7 @@ app.get("/health", (_req, res) => {
     ok: true,
     service: "artstudio242-api",
     cloudinary: isConfigured(),
+    cloudinaryEnv: envStatus(),
   });
 });
 
