@@ -8,7 +8,7 @@ const {
   imageCacheMiddleware, 
   createCacheInvalidator 
 } = require("../middleware/cache");
-const { rewriteGalleryImagesAsync } = require("../lib/cloudinary");
+const { rewriteGalleryImage } = require("../lib/cloudinary");
 
 const router = express.Router();
 
@@ -33,7 +33,7 @@ router.get("/", imageCacheMiddleware, async (req, res) => {
     const cacheKey = `gallery:${all}:${featured}:${category || 'none'}`;
     
     // Essayer de récupérer depuis Redis avec fallback
-    const raw = await redis.getOrSet(cacheKey, async () => {
+    const images = await redis.getOrSet(cacheKey, async () => {
       const where = {};
       if (!all) where.isActive = true;
       if (featured) where.isFeatured = true;
@@ -52,8 +52,7 @@ router.get("/", imageCacheMiddleware, async (req, res) => {
       });
     }, 3600);
 
-    const images = await rewriteGalleryImagesAsync(raw, prisma);
-    res.json(images);
+    res.json(Array.isArray(images) ? images.map(rewriteGalleryImage) : images);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erreur serveur" });

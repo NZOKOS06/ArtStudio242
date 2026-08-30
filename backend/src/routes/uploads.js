@@ -8,8 +8,6 @@ const {
   isProductionHost,
   uploadBuffer,
   migrateLocalAssetUrls,
-  rewriteAssetUrlAsync,
-  isLocalUploadUrl,
 } = require("../lib/cloudinary");
 const { prisma } = require("../lib/prisma");
 const { notify } = require("../lib/realtime");
@@ -72,22 +70,6 @@ router.post("/", requireAuth, upload.single("file"), async (req, res, next) => {
       filename: result.original_filename || req.file.originalname,
       storage: "cloudinary",
     });
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.get("/resolve", async (req, res, next) => {
-  try {
-    const url = req.query.url || "";
-    if (!url) {
-      return res.status(400).json({ error: "Paramètre url requis" });
-    }
-    if (!isLocalUploadUrl(url)) {
-      return res.json({ url, resolved: url });
-    }
-    const resolved = await rewriteAssetUrlAsync(url);
-    res.json({ url, resolved });
   } catch (err) {
     next(err);
   }
