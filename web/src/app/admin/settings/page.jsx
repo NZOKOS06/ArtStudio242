@@ -212,7 +212,8 @@ export default function AdminSettingsPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Field label="Téléphone"><input className="admin-input" value={form.phone || ""} onChange={(e) => setValue("phone", e.target.value)} /></Field>
-                <Field label="WhatsApp" hint="Format international sans + (ex: 242069167515)"><input className="admin-input" value={form.whatsapp || ""} onChange={(e) => setValue("whatsapp", e.target.value)} /></Field>
+                <Field label="Second WhatsApp" hint="Format international sans + (ex: 242064223521)"><input className="admin-input" value={form.phoneSecondary || ""} onChange={(e) => setValue("phoneSecondary", e.target.value)} /></Field>
+                <Field label="WhatsApp principal" hint="Format international sans + (ex: 242069167515)"><input className="admin-input" value={form.whatsapp || ""} onChange={(e) => setValue("whatsapp", e.target.value)} /></Field>
                 <Field label="Email"><input className="admin-input" type="email" value={form.email || ""} onChange={(e) => setValue("email", e.target.value)} /></Field>
                 <Field label="Adresse"><input className="admin-input" value={form.address || ""} onChange={(e) => setValue("address", e.target.value)} /></Field>
                 <Field label="Pays" full><input className="admin-input" value={form.country || ""} onChange={(e) => setValue("country", e.target.value)} /></Field>
@@ -227,9 +228,9 @@ export default function AdminSettingsPage() {
                 <p className="text-sm text-white/40 mt-1">Liens vers vos profils — Instagram, Facebook, TikTok.</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Field label="Instagram" full><input className="admin-input" value={form.instagram || ""} onChange={(e) => setValue("instagram", e.target.value)} placeholder="https://instagram.com/artstudio242" /></Field>
-                <Field label="Facebook"><input className="admin-input" value={form.facebook || ""} onChange={(e) => setValue("facebook", e.target.value)} /></Field>
-                <Field label="TikTok"><input className="admin-input" value={form.tiktok || ""} onChange={(e) => setValue("tiktok", e.target.value)} /></Field>
+                <Field label="Instagram" hint="Lien du profil · @Art_studio_242" full><input className="admin-input" value={form.instagram || ""} onChange={(e) => setValue("instagram", e.target.value)} placeholder="https://instagram.com/Art_studio_242" /></Field>
+                <Field label="Facebook" hint="Lien direct vers la page Artstudio 242"><input className="admin-input" value={form.facebook || ""} onChange={(e) => setValue("facebook", e.target.value)} placeholder="https://facebook.com/…" /></Field>
+                <Field label="TikTok" hint="Lien du profil @artstudio242"><input className="admin-input" value={form.tiktok || ""} onChange={(e) => setValue("tiktok", e.target.value)} placeholder="https://tiktok.com/@artstudio242" /></Field>
               </div>
             </section>
 

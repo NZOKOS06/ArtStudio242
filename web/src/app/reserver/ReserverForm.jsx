@@ -9,15 +9,42 @@ import SiteHeader from "../../components/SiteHeader";
 import SiteFooter from "../../components/SiteFooter";
 
 const DEFAULT_PACKS = [
-  { id: "1", name: "Standard", slug: "standard", price: 50000, features: ["Séance 1h", "10 photos retouchées"] },
-  { id: "2", name: "Premium", slug: "premium", price: 100000, features: ["Séance 2h", "30 photos retouchées"] },
-  { id: "3", name: "Prestige", slug: "prestige", price: 200000, features: ["Demi-journée", "Toutes les photos"] },
+  { id: "1", name: "Enfant (jusqu’à 12 ans)", slug: "enfant-jusqu-a-12-ans", price: 7500, features: ["Séance enfant"], isFallback: true },
+  { id: "2", name: "Découverte", slug: "decouverte", price: 15000, features: ["1 fond", "3 tenues", "1 heure : 30 photos"], isFallback: true },
+  { id: "3", name: "Silver", slug: "silver", price: 30000, features: ["Fonds au choix", "5 tenues", "2 heures : 50 photos"], isFallback: true },
+  { id: "4", name: "Gold", slug: "gold", price: 60000, features: ["Fonds inclus", "Plus de 5 tenues", "3 heures : 70 photos"], isFallback: true },
+  { id: "5", name: "Événements", slug: "evenement", price: 100000, features: ["Couverture complète", "Tarif selon l’événement et sa durée"], isFallback: true },
 ];
+
+const EVENT_DURATIONS = [
+  { id: "event-1h", slug: "evenement-1h", name: "1 heure", price: 20000, features: ["Anniversaire, soutenance, dot…"] },
+  { id: "event-2h", slug: "evenement-2h", name: "2 heures", price: 40000, features: ["Anniversaire, soutenance, dot…"] },
+  { id: "event-3h", slug: "evenement-3h", name: "3 heures", price: 60000, features: ["Anniversaire, soutenance, dot…"] },
+];
+
+function normalizeLabel(value) {
+  return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
 
 export default function ReserverForm() {
   const searchParams = useSearchParams();
   const { settings, packs, categories } = useStudio();
   const displayPacks = packs.length > 0 ? packs : DEFAULT_PACKS;
+  const databaseEventPack = packs.find((pack) => pack.slug === "evenement" || normalizeLabel(pack.name) === "evenement");
+  const eventOptions = [
+    ...EVENT_DURATIONS.map((option) => ({ ...option, isEventOption: true, bookingPackId: databaseEventPack?.id || null })),
+    {
+      id: "event-complete",
+      slug: "evenement-complet",
+      alternateSlugs: ["evenement"],
+      name: "Couverture complète",
+      price: 100000,
+      from: true,
+      features: ["Couverture complète", "Tarif selon l’événement et sa durée"],
+      isEventOption: true,
+      bookingPackId: databaseEventPack?.id || null,
+    },
+  ];
   const [form, setForm] = useState({
     projectName: "",
     packId: "",
@@ -33,9 +60,16 @@ export default function ReserverForm() {
 
   useEffect(() => {
     const slug = searchParams.get("pack");
-    if (slug && displayPacks.length) {
-      const match = displayPacks.find((x) => x.slug === slug);
-      if (match) setForm((f) => ({ ...f, packId: match.id }));
+    const project = searchParams.get("project");
+    const startsEvent = slug?.startsWith("evenement") || normalizeLabel(project) === "evenement";
+    const choices = startsEvent ? [...eventOptions, ...displayPacks] : displayPacks;
+    const match = slug && choices.find((pack) => pack.slug === slug || pack.alternateSlugs?.includes(slug));
+    if (match || startsEvent) {
+      setForm((current) => ({
+        ...current,
+        projectName: startsEvent ? "Événement" : current.projectName,
+        packId: match?.id || current.packId,
+      }));
     }
   }, [searchParams, displayPacks]);
 
@@ -44,13 +78,20 @@ export default function ReserverForm() {
     setLoading(true);
     setStatus({ type: "", message: "" });
     try {
+      const selectedPack = [...displayPacks, ...eventOptions].find((pack) => pack.id === form.packId);
+      const eventDetails = selectedPack?.isEventOption
+        ? `Formule événement : ${selectedPack.name} — ${selectedPack.from ? "à partir de " : ""}${selectedPack.price.toLocaleString("fr-FR")} FCFA.`
+        : selectedPack?.isFallback
+          ? `Formule choisie : ${selectedPack.name} — ${selectedPack.price.toLocaleString("fr-FR")} FCFA.`
+          : "";
       await api.post("/api/bookings", {
         ...form,
         clientEmail: form.clientEmail || null,
         clientInstagram: form.clientInstagram || null,
         projectName: form.projectName || null,
         preferredAt: form.preferredAt ? new Date(form.preferredAt).toISOString() : null,
-        packId: form.packId || null,
+        packId: selectedPack?.isEventOption ? selectedPack.bookingPackId : selectedPack?.isFallback ? null : form.packId || null,
+        message: [form.message, eventDetails].filter(Boolean).join("\n") || null,
       });
       setStatus({ type: "success", message: "Demande envoyée ! Nous vous recontactons rapidement." });
       setForm({ projectName: "", packId: "", preferredAt: "", clientName: "", clientPhone: "", clientEmail: "", clientInstagram: "", message: "" });
@@ -61,8 +102,19 @@ export default function ReserverForm() {
     }
   }
 
-  const selectedPack = displayPacks.find((p) => p.id === form.packId);
+  const selectedPack = [...displayPacks, ...eventOptions].find((p) => p.id === form.packId);
+  const isEventProject = normalizeLabel(form.projectName) === "evenement";
+  const visiblePacks = isEventProject
+    ? eventOptions
+    : displayPacks.filter((pack) => pack.slug !== "evenement" && normalizeLabel(pack.name) !== "evenement");
   const whatsapp = settings.whatsapp || "242069167515";
+  const whatsappMessage = [
+    "Bonjour Art Studio 242, je souhaite réserver",
+    form.projectName ? `un projet ${form.projectName}` : "",
+    selectedPack
+      ? `la formule ${selectedPack.name} (${selectedPack.from ? "à partir de " : ""}${selectedPack.price.toLocaleString("fr-FR")} FCFA)`
+      : "",
+  ].filter(Boolean).join(" — ");
   const defaultCategories = [
     { id: 1, name: "Portrait" }, { id: 2, name: "Mode" },
     { id: 3, name: "Corporate" }, { id: 4, name: "Couple" },
@@ -92,10 +144,7 @@ export default function ReserverForm() {
       <main className="bg-black py-16">
         <div className="max-w-7xl mx-auto px-6">
           <form onSubmit={onSubmit}>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-              {/* ── Colonne 1 : Projet + Date ── */}
-              <div className="flex flex-col gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Projet */}
                 <div className="bg-white/3 border border-white/10 rounded-2xl p-6">
                   <h3 className="text-xs font-black text-white/40 tracking-[0.2em] uppercase mb-5">
@@ -106,7 +155,12 @@ export default function ReserverForm() {
                       <button
                         key={c.id}
                         type="button"
-                        onClick={() => setForm({ ...form, projectName: c.name })}
+                        aria-pressed={form.projectName === c.name}
+                        onClick={() => setForm((current) => ({
+                          ...current,
+                          projectName: c.name,
+                          packId: current.projectName === c.name ? current.packId : "",
+                        }))}
                         className={`py-3 px-3 rounded-xl text-sm font-semibold border transition-all duration-200 ${
                           form.projectName === c.name
                             ? "bg-primary border-primary text-white"
@@ -119,28 +173,13 @@ export default function ReserverForm() {
                   </div>
                 </div>
 
-                {/* Date */}
-                <div className="bg-white/3 border border-white/10 rounded-2xl p-6">
-                  <h3 className="text-xs font-black text-white/40 tracking-[0.2em] uppercase mb-5">
-                    03. Votre date
-                  </h3>
-                  <input
-                    type="datetime-local"
-                    value={form.preferredAt}
-                    onChange={(e) => setForm({ ...form, preferredAt: e.target.value })}
-                    required
-                    className="w-full bg-black/50 border border-white/10 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/60 transition-colors [color-scheme:dark]"
-                  />
-                </div>
-              </div>
-
-              {/* ── Colonne 2 : Expérience ── */}
+              {/* Expérience */}
               <div className="bg-white/3 border border-white/10 rounded-2xl p-6">
                 <h3 className="text-xs font-black text-white/40 tracking-[0.2em] uppercase mb-5">
                   02. Votre expérience
                 </h3>
                 <div className="flex flex-col gap-3">
-                  {displayPacks.map((p) => (
+                  {visiblePacks.map((p) => (
                     <label
                       key={p.id}
                       className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all duration-200 ${
@@ -154,22 +193,38 @@ export default function ReserverForm() {
                         name="packId"
                         value={p.id}
                         checked={form.packId === p.id}
-                        onChange={(e) => setForm({ ...form, packId: e.target.value })}
+                        onChange={(e) => setForm((current) => ({ ...current, packId: e.target.value }))}
                         className="accent-primary w-4 h-4"
                       />
                       <div className="flex-1">
                         <div className="font-bold text-sm text-white">{p.name}</div>
-                        {p.features?.[0] && <div className="text-xs text-white/40 mt-0.5">{p.features[0]}</div>}
+                        {p.features?.map((feature) => <div key={feature} className="text-xs text-white/40 mt-0.5">{feature}</div>)}
                       </div>
                       <div className="text-sm font-black text-primary shrink-0">
-                        {p.price.toLocaleString("fr-FR")} FCFA
+                        {p.from ? "À partir de " : ""}{p.price.toLocaleString("fr-FR")} FCFA
                       </div>
                     </label>
                   ))}
                 </div>
               </div>
 
-              {/* ── Colonne 3 : Vos infos ── */}
+              {/* Date */}
+              <div className="bg-white/3 border border-white/10 rounded-2xl p-6">
+                <h3 className="text-xs font-black text-white/40 tracking-[0.2em] uppercase mb-5">
+                  03. Votre date
+                </h3>
+                <input
+                  type="datetime-local"
+                  name="preferredAt"
+                  autoComplete="off"
+                  value={form.preferredAt}
+                  onChange={(e) => setForm({ ...form, preferredAt: e.target.value })}
+                  required
+                  className="w-full bg-black/50 border border-white/10 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/60 transition-colors [color-scheme:dark]"
+                />
+              </div>
+
+              {/* Vos informations */}
               <div className="bg-white/3 border border-white/10 rounded-2xl p-6">
                 <h3 className="text-xs font-black text-white/40 tracking-[0.2em] uppercase mb-5">
                   04. Vos informations
@@ -184,6 +239,8 @@ export default function ReserverForm() {
                     <input
                       key={key}
                       type={type || "text"}
+                      name={key}
+                      autoComplete={key === "clientName" ? "name" : key === "clientPhone" ? "tel" : key === "clientEmail" ? "email" : "off"}
                       placeholder={placeholder}
                       required={required}
                       value={form[key]}
@@ -212,7 +269,7 @@ export default function ReserverForm() {
                 </p>
                 <p className="text-white text-sm mt-1">
                   <span className="text-white/50">Formule :</span>{" "}
-                  <strong>{selectedPack ? `${selectedPack.name} : ${selectedPack.price.toLocaleString("fr-FR")} FCFA` : "Non sélectionnée"}</strong>
+                  <strong>{selectedPack ? `${selectedPack.from ? "À partir de " : ""}${selectedPack.price.toLocaleString("fr-FR")} FCFA — ${selectedPack.name}` : "Non sélectionnée"}</strong>
                 </p>
               </div>
 
@@ -225,7 +282,7 @@ export default function ReserverForm() {
                   {loading ? "Envoi en cours..." : "ENVOYER LA DEMANDE"}
                 </button>
                 <a
-                  href={`https://wa.me/${whatsapp}?text=Bonjour Art Studio 242, je souhaite réserver${selectedPack ? ` la séance ${selectedPack.name}` : ""}`}
+                  href={`https://wa.me/${whatsapp}?text=${encodeURIComponent(whatsappMessage)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="border border-white/20 hover:border-white/50 text-white/70 hover:text-white font-semibold text-sm px-10 py-4 rounded-full transition-all duration-200 text-center"
