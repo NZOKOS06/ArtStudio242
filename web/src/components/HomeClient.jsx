@@ -30,11 +30,19 @@ const STEPS = [
   { num: "05", title: "LIVRAISON", desc: "Vos images finales prêtes." },
 ];
 
+const EVENT_OFFERS = [
+  { slug: "evenement-1h", name: "1 heure", price: 20000, detail: "Anniversaire, soutenance, dot…" },
+  { slug: "evenement-2h", name: "2 heures", price: 40000, detail: "Anniversaire, soutenance, dot…" },
+  { slug: "evenement-3h", name: "3 heures", price: 60000, detail: "Anniversaire, soutenance, dot…" },
+  { slug: "evenement-complet", name: "Couverture complète", price: 100000, from: true, detail: "Tarif selon l’événement et sa durée." },
+];
+
 export default function HomeClient({ initial }) {
   const { settings: liveSettings, packs: livePacks, categories: liveCategories } = useStudio();
 
   const settings = { ...(initial.settings || {}), ...liveSettings };
   const packs = livePacks?.length ? livePacks : initial.packs || [];
+  const studioPacks = packs.filter((pack) => pack.slug !== "evenement");
   const categories = liveCategories?.length ? liveCategories : initial.categories || [];
   const gallery = initial.gallery || [];
   const reviews = initial.reviews || [];
@@ -47,11 +55,12 @@ export default function HomeClient({ initial }) {
   // Hero entrance animation
   useEffect(() => {
     if (!heroTitleRef.current) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-    tl.fromTo(".hero-eyebrow", { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6 })
-      .fromTo(".hero-title-line", { y: 60, opacity: 0 }, { y: 0, opacity: 1, stagger: 0.15, duration: 0.8 }, "-=0.2")
-      .fromTo(".hero-actions", { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6 }, "-=0.3")
-      .fromTo(".hero-img", { scale: 1.1, opacity: 0 }, { scale: 1, opacity: 1, duration: 1.2, ease: "power2.out" }, "<");
+    tl.fromTo(".hero-eyebrow", { y: 16 }, { y: 0, duration: 0.45 })
+      .fromTo(".hero-title-line", { y: 24 }, { y: 0, stagger: 0.1, duration: 0.55 }, "-=0.15")
+      .fromTo(".hero-actions", { y: 16 }, { y: 0, duration: 0.45 }, "-=0.2")
+      .fromTo(".hero-img", { scale: 1.04 }, { scale: 1, duration: 0.8, ease: "power2.out" }, "<");
   }, []);
 
   // Scroll-triggered section reveals
@@ -82,34 +91,34 @@ export default function HomeClient({ initial }) {
       <SiteHeader settings={settings} />
 
       {/* ═══════════════════════════════════════ HERO ═══════════════════════════════════════ */}
-      <section ref={heroRef} className="relative min-h-screen flex items-center overflow-hidden bg-black">
+      <section ref={heroRef} className="relative min-h-[100svh] lg:min-h-screen flex items-start lg:items-center overflow-hidden bg-black">
         {/* Ambient glow */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/3 -left-32 w-96 h-96 rounded-full bg-primary/10 blur-3xl" />
           <div className="absolute bottom-0 right-0 w-[600px] h-[600px] rounded-full bg-primary/5 blur-3xl" />
         </div>
 
-        <div className="max-w-7xl mx-auto px-6 pt-28 pb-20 w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div className="max-w-7xl mx-auto px-6 pt-28 pb-16 lg:pt-28 lg:pb-20 w-full grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12 items-center">
           {/* Text */}
           <div className="relative z-10">
-            <p className="hero-eyebrow text-primary text-xs font-bold tracking-[0.25em] uppercase mb-6 opacity-0">
+            <p className="hero-eyebrow text-primary text-xs font-bold tracking-[0.25em] uppercase mb-4 lg:mb-6">
               Studio photo & création visuelle - Brazzaville
             </p>
             <h1 ref={heroTitleRef} className="font-display font-black leading-[1.05] text-white mb-8">
-              <span className="hero-title-line block text-5xl md:text-7xl opacity-0">L'image n'est pas</span>
-              <span className="hero-title-line block text-5xl md:text-7xl opacity-0">seulement prise.</span>
-              <span className="hero-title-line block text-5xl md:text-7xl italic text-primary opacity-0">Elle est créée.</span>
+              <span className="hero-title-line block text-4xl sm:text-5xl md:text-7xl">L'image n'est pas</span>
+              <span className="hero-title-line block text-4xl sm:text-5xl md:text-7xl">seulement prise.</span>
+              <span className="hero-title-line block text-4xl sm:text-5xl md:text-7xl italic text-primary">Elle est créée.</span>
             </h1>
-            <div className="hero-actions flex flex-wrap gap-4 opacity-0">
+            <div className="hero-actions flex flex-wrap gap-3 sm:gap-4">
               <Link
                 href="/reserver"
-                className="bg-primary hover:bg-primary/90 text-white font-bold px-8 py-4 rounded-full transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-primary/30 tracking-wide text-sm"
+                className="bg-primary hover:bg-primary/90 text-white font-bold px-6 sm:px-8 py-3.5 sm:py-4 rounded-full transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-primary/30 tracking-wide text-xs sm:text-sm"
               >
                 RÉSERVER UNE SÉANCE
               </Link>
               <a
                 href="#galerie"
-                className="border border-white/25 hover:border-white/60 text-white font-semibold px-8 py-4 rounded-full transition-all duration-200 hover:bg-white/5 text-sm"
+                className="border border-white/25 hover:border-white/60 text-white font-semibold px-6 sm:px-8 py-3.5 sm:py-4 rounded-full transition-all duration-200 hover:bg-white/5 text-xs sm:text-sm"
               >
                 VOIR LE PORTFOLIO
               </a>
@@ -123,7 +132,7 @@ export default function HomeClient({ initial }) {
 
           {/* Image */}
           <div className="relative flex justify-center lg:justify-end">
-            <div className="hero-img relative w-full max-w-lg opacity-0">
+            <div className="hero-img relative w-full max-w-lg">
               <img
                 src="/hero.jpg"
                 alt="Art Studio 242 - Photographe professionnel à Brazzaville"
@@ -136,7 +145,7 @@ export default function HomeClient({ initial }) {
         </div>
 
         {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 animate-bounce">
+        <div className="hidden sm:flex absolute bottom-8 left-1/2 -translate-x-1/2 flex-col items-center gap-2 animate-bounce">
           <span className="text-xs text-white/30 tracking-widest uppercase">Scroll</span>
           <span className="w-px h-10 bg-gradient-to-b from-white/30 to-transparent" />
         </div>
@@ -248,8 +257,8 @@ export default function HomeClient({ initial }) {
               Choisissez votre expérience
             </h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {packs.map((pack) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+            {studioPacks.map((pack) => (
               <article
                 key={pack.id}
                 className="gsap-reveal relative flex flex-col bg-white/3 border border-white/10 hover:border-primary/40 rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10"
@@ -280,6 +289,35 @@ export default function HomeClient({ initial }) {
                 </Link>
               </article>
             ))}
+          </div>
+
+          <div className="mt-14 rounded-3xl border border-primary/25 bg-gradient-to-br from-primary/10 via-white/[0.02] to-transparent p-6 sm:p-8 md:p-10">
+            <div className="max-w-3xl mb-8">
+              <p className="text-primary text-xs font-bold tracking-[0.25em] uppercase mb-3">Privés & professionnels</p>
+              <h3 className="font-display font-black text-3xl sm:text-4xl text-white mb-3">Événements</h3>
+              <p className="text-sm sm:text-base text-white/60 leading-relaxed">
+                Anniversaires, soutenances, dots, mariages et événements professionnels.
+                Choisissez une durée ou demandez une couverture complète.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+              {EVENT_OFFERS.map((offer) => (
+                <article key={offer.slug} className="flex flex-col rounded-2xl border border-white/10 bg-black/50 p-5">
+                  <h4 className="font-display font-black text-lg text-white">{offer.name}</h4>
+                  <p className="mt-3 font-display font-black text-2xl text-primary">
+                    {offer.from ? "À partir de " : ""}{formatPrice(offer.price)}
+                    <span className="ml-1 text-sm font-medium text-primary/70">FCFA</span>
+                  </p>
+                  <p className="mt-2 mb-5 flex-1 text-sm text-white/60">{offer.detail}</p>
+                  <Link
+                    href={`/reserver?project=evenement&pack=${offer.slug}`}
+                    className="block rounded-xl border border-primary/40 bg-primary/10 px-4 py-3 text-center text-sm font-bold tracking-wide text-primary transition-colors hover:border-primary hover:bg-primary hover:text-white"
+                  >
+                    {offer.from ? "DEMANDER UN DEVIS" : "CHOISIR CETTE DURÉE"}
+                  </Link>
+                </article>
+              ))}
+            </div>
           </div>
         </div>
       </section>
